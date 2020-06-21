@@ -2,7 +2,7 @@
 
 namespace Chiron\Injector;
 
-use Chiron\Invoker\Exception\NotCallableException;
+use Chiron\Injector\Exception\NotCallableException;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 

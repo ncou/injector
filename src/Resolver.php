@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chiron\Injector;
 
-use Chiron\Reflection\Exception\CannotResolveException;
+use Chiron\Injector\Exception\CannotResolveException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -23,6 +23,12 @@ use ReflectionException;
 
 //https://github.com/yiisoft/injector/blob/master/src/Injector.php#L121
 
+//https://github.com/illuminate/container/blob/master/BoundMethod.php#L158
+
+//https://github.com/auraphp/Aura.Di/blob/4.x/src/Resolver/Resolver.php#L268
+
+//https://github.com/symfony/symfony/blob/e60a876201b5b306d0c81a24d9a3db997192079c/src/Symfony/Component/DependencyInjection/Compiler/AutowirePass.php#L188
+
 final class Resolver
 {
     /** ContainerInterface */
@@ -38,7 +44,8 @@ final class Resolver
         $this->container = $container;
     }
 
-    public function resolveArguments(ReflectionFunctionAbstract $reflection, array $parameters = []): array {
+    public function resolveArguments(ReflectionFunctionAbstract $reflection, array $parameters = []): array
+    {
         $arguments = [];
 
         foreach ($reflection->getParameters() as $parameter) {

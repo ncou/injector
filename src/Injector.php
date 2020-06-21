@@ -33,6 +33,16 @@ use ReflectionException;
 
 //https://github.com/yiisoft/factory/blob/master/src/Definitions/ArrayBuilder.php#L39
 
+//https://github.com/binsoul/common-reflection/blob/aea5110dc9934c213e7508e48e337c995307868e/src/DefaultReflector.php
+//https://github.com/dazet/data-map/blob/19eb76a8e22c23003e57a81cfec03dd0d0191fcb/src/Output/ObjectConstructor.php#L67
+//https://github.com/stubbles/stubbles-reflect/blob/e0c64a24b2fe869ddf813e48e7d575dfb04c6bc6/src/main/php/functions.php#L39
+
+//https://github.com/illuminate/container/blob/master/BoundMethod.php
+//https://github.com/thirdgerb/container/blob/master/src/BoundMethod.php
+
+// TODO : créer deux classes : Invoker::class et Factory::class qui auront des méthodes "static call()" et "static make()" avec en paramétre le container, et la classe Injector se chargera d'appeller ces méthodes. Cela permet de séparer le code source, mais aussi de pouvoir utiliser uniquement une partie du code (à savoir par exemple dans les classe AbstractBootloader::class on pourra directement faire un appel à Invoker::invoke() et idem pour la partie Factory. Cela évitera d'instancer une classe générique qui est Injector !!!)
+// TODO : mettre le code du resolver dans un répertoire Trait et insérer directement le "Trait" dans les classes Factory et Invoker !!!!
+
 final class Injector
 {
     /** ContainerInterface */
@@ -87,7 +97,7 @@ final class Injector
     // TODO : regarder aussi ici : https://github.com/mrferos/di/blob/master/src/Definition/AbstractDefinition.php#L75
     // TODO : regarder ici pour utiliser le arobase @    https://github.com/slince/di/blob/master/DefinitionResolver.php#L210
     // TODO : améliorer le resolve avec la gestion des classes "Raw" et "Reference" =>   https://github.com/thephpleague/container/blob/91a751faabb5e3f5e307d571e23d8aacc4acde88/src/Argument/ArgumentResolverTrait.php#L17
-    // TODO : vérifier pourquoi c'est une méthode "public" et non pas private !!!!
+    // TODO : Faire des tests avec des paramétres Variadic (...$variadic) et avec un typehint 'object' qui est supporté depuis PHP 7.3 !!!!
     private function resolveArguments(array $arguments): array
     {
         foreach ($arguments as &$arg) {
@@ -106,8 +116,12 @@ final class Injector
         return $arguments;
     }
 
+    //https://github.com/auraphp/Aura.Di/blob/4.x/src/Resolver/Reflector.php#L74
+    //https://github.com/doctrine/instantiator/blob/master/src/Doctrine/Instantiator/Instantiator.php#L116
+    //https://github.com/doctrine/instantiator/blob/master/src/Doctrine/Instantiator/Exception/InvalidArgumentException.php
     private function reflectClass(string $className): ReflectionClass
     {
+        // TODO : vérifier si ce test class_exist() est vraiment utile, je pense qu'on peut laisser la ReflectionException qui sera surement levée lors du ReflectionClass($className) se propager.
         if (! class_exists($className)) {
             // TODO  : on devrait pas renvoyer une ContainerException ????
             throw new InvalidArgumentException("Entry '{$className}' cannot be resolved");
@@ -115,20 +129,20 @@ final class Injector
 
         // TODO : vérifier que le constructeur est public !!!! => https://github.com/PHP-DI/PHP-DI/blob/cdcf21d2a8a60605e81ec269342d48b544d0dfc7/src/Definition/Source/ReflectionBasedAutowiring.php#L31
         // TODO : déplacer ce bout de code dans une méthode "reflectClass()"
-        $class = new ReflectionClass($className);
+        $reflection = new ReflectionClass($className);
 
         // TODO : ajouter une gestion des exceptions circulaires.
         // TODO : améliorer la gestion des classes non instanciables => https://github.com/illuminate/container/blob/master/Container.php#L1001
 
         // Prevent error if you try to instanciate an abstract class or a class with a private constructor.
-        if (! $class->isInstantiable()) {
+        if (! $reflection->isInstantiable()) {
             throw new InvalidArgumentException(sprintf(
                 'Entry "%s" cannot be resolved: the class is not instantiable',
                 $className
             ));
         }
 
-        return $class;
+        return $reflection;
     }
 
 
