@@ -70,9 +70,9 @@ final class Injector
     // TODO : attention on ne gére pas les alias, alors que cela pourrait servir si on veut builder une classe en utilisant l'alias qui est présent dans le container. Réfléchir si ce cas peut arriver.
     // TODO : renommer en buildClass() ????
     // TODO : améliorer le Circular exception avec le code : https://github.com/symfony/dependency-injection/blob/master/Container.php#L236
-    // TODO : renommer la fonction en "make()"
     // TODO : il n'y a pas un risque de références circulaires si on appel directement cette méthode qui est public.
-    public function build(string $className, array $arguments = [])
+    // TODO : ajouter le typehint pour le retour de la fonction avec "make(): object"
+    public function make(string $className, array $arguments = [])
     {
         // TODO : vérifier si on a besoin de cette méthode. Et il faudrait surement qu'elle soit aussi appellée dans la partie 'call()'
         $arguments = $this->resolveArguments($arguments);
@@ -121,7 +121,7 @@ final class Injector
     //https://github.com/doctrine/instantiator/blob/master/src/Doctrine/Instantiator/Exception/InvalidArgumentException.php
     private function reflectClass(string $className): ReflectionClass
     {
-        // TODO : vérifier si ce test class_exist() est vraiment utile, je pense qu'on peut laisser la ReflectionException qui sera surement levée lors du ReflectionClass($className) se propager.
+        // TODO : mettre un message d'erreur plus clair !!! + remonter ce 'if' directement dans la méthode build ca sera plus lisible !!!!
         if (! class_exists($className)) {
             // TODO  : on devrait pas renvoyer une ContainerException ????
             throw new InvalidArgumentException("Entry '{$className}' cannot be resolved");
@@ -236,7 +236,7 @@ final class Injector
         return $this->invoke($resolved, $params);
     }
 
-    public function invoke(callable $callable, array $args = [])
+    private function invoke(callable $callable, array $args = [])
     {
         $reflection = new ReflectionCallable($callable);
         $parameters = $this->resolver->resolveArguments($reflection, $args);

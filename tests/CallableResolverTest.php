@@ -1,18 +1,18 @@
 <?php
 
-namespace Chiron\Invoker\Tests;
+namespace Chiron\Injector\Test;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Container\NotFoundExceptionInterface;
 use Chiron\Container\Container;
-use Chiron\Invoker\Injector5 as Invoker;
-use Chiron\Invoker\CallableResolver;
-use Chiron\Invoker\Exception\NotCallableException;
-use Chiron\Invoker\MissingRequiredArgumentException;
-use Chiron\Invoker\Tests\Support\ColorInterface;
-use Chiron\Invoker\Tests\Support\EngineInterface;
-use Chiron\Invoker\Tests\Support\EngineMarkTwo;
-use Chiron\Invoker\Tests\Support\CallableSpy;
+use Chiron\Injector\Injector;
+use Chiron\Injector\CallableResolver;
+use Chiron\Injector\Exception\NotCallableException;
+use Chiron\Injector\MissingRequiredArgumentException;
+use Chiron\Injector\Test\Support\ColorInterface;
+use Chiron\Injector\Test\Support\EngineInterface;
+use Chiron\Injector\Test\Support\EngineMarkTwo;
+use Chiron\Injector\Test\Support\CallableSpy;
 
 
 class CallableResolverTest extends TestCase
@@ -26,7 +26,7 @@ class CallableResolverTest extends TestCase
      */
     private $container;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->container = new Container;
         $this->resolver = new CallableResolver($this->container);
@@ -53,7 +53,7 @@ class CallableResolverTest extends TestCase
     public function resolves_callable_from_container()
     {
         $callable = function () {};
-        $this->container->add('thing-to-call', function() use ($callable) { return $callable;});
+        $this->container->bind('thing-to-call', function() use ($callable) { return $callable;});
         $this->assertSame($callable, $this->resolver->resolve('thing-to-call'));
     }
     /**
@@ -62,8 +62,8 @@ class CallableResolverTest extends TestCase
     public function resolves_invokable_class()
     {
         $callable = new CallableSpy;
-        $this->container->add('Chiron\Invoker\Tests\Support\CallableSpy', function() use ($callable) { return $callable;});
-        $this->assertSame($callable, $this->resolver->resolve('Chiron\Invoker\Tests\Support\CallableSpy'));
+        $this->container->bind('Chiron\Injector\Test\Support\CallableSpy', function() use ($callable) { return $callable;});
+        $this->assertSame($callable, $this->resolver->resolve('Chiron\Injector\Test\Support\CallableSpy'));
     }
     /**
      * @test
@@ -71,8 +71,8 @@ class CallableResolverTest extends TestCase
     public function resolve_array_method_call()
     {
         $fixture = new InvokerTestFixture;
-        $this->container->add('Chiron\Invoker\Tests\InvokerTestFixture', $fixture);
-        $result = $this->resolver->resolve(array('Chiron\Invoker\Tests\InvokerTestFixture', 'foo'));
+        $this->container->bind('Chiron\Injector\Test\InvokerTestFixture', $fixture);
+        $result = $this->resolver->resolve(array('Chiron\Injector\Test\InvokerTestFixture', 'foo'));
         $result();
         $this->assertTrue($fixture->wasCalled);
     }
@@ -82,8 +82,8 @@ class CallableResolverTest extends TestCase
     public function resolve_string_method_call()
     {
         $fixture = new InvokerTestFixture;
-        $this->container->add('Chiron\Invoker\Tests\InvokerTestFixture', $fixture);
-        $result = $this->resolver->resolve('Chiron\Invoker\Tests\InvokerTestFixture::foo');
+        $this->container->bind('Chiron\Injector\Test\InvokerTestFixture', $fixture);
+        $result = $this->resolver->resolve('Chiron\Injector\Test\InvokerTestFixture::foo');
         $result();
         $this->assertTrue($fixture->wasCalled);
     }
@@ -93,7 +93,7 @@ class CallableResolverTest extends TestCase
     public function resolves_array_method_call_with_service()
     {
         $fixture = new InvokerTestFixture;
-        $this->container->add('thing-to-call', $fixture);
+        $this->container->bind('thing-to-call', $fixture);
         $result = $this->resolver->resolve(array('thing-to-call', 'foo'));
         $result();
         $this->assertTrue($fixture->wasCalled);
@@ -104,7 +104,7 @@ class CallableResolverTest extends TestCase
     public function resolves_string_method_call_with_service()
     {
         $fixture = new InvokerTestFixture;
-        $this->container->add('thing-to-call', $fixture);
+        $this->container->bind('thing-to-call', $fixture);
         $result = $this->resolver->resolve('thing-to-call::foo');
         $result();
         $this->assertTrue($fixture->wasCalled);
@@ -112,17 +112,17 @@ class CallableResolverTest extends TestCase
     /**
      * @test
      */
-    public function resolves_string_method_call_with_service_simpledot()
+    public function resolves_string_method_call_with_service_simple_doubledot()
     {
         $fixture = new InvokerTestFixture;
-        $this->container->add('thing-to-call', $fixture);
+        $this->container->bind('thing-to-call', $fixture);
         $result = $this->resolver->resolve('thing-to-call:foo');
         $result();
         $this->assertTrue($fixture->wasCalled);
     }
     /**
      * @test
-     * @expectedException \Chiron\Invoker\Exception\NotCallableException
+     * @expectedException \Chiron\Injector\Exception\NotCallableException
      * @expectedExceptionMessage 'foo' is neither a callable nor a valid container entry
      */
     public function throws_resolving_non_callable_from_container()
@@ -132,7 +132,7 @@ class CallableResolverTest extends TestCase
     }
     /**
      * @test
-     * @expectedException \Chiron\Invoker\Exception\NotCallableException
+     * @expectedException \Chiron\Injector\Exception\NotCallableException
      * @expectedExceptionMessage Instance of stdClass is not a callable.
      */
     public function handles_objects_correctly_in_exception_message()
@@ -142,7 +142,7 @@ class CallableResolverTest extends TestCase
     }
     /**
      * @test
-     * @expectedException \Chiron\Invoker\Exception\NotCallableException
+     * @expectedException \Chiron\Injector\Exception\NotCallableException
      * @expectedExceptionMessage stdClass::test() is not a callable.
      */
     public function handles_method_calls_correctly_in_exception_message()
@@ -155,3 +155,14 @@ function foo()
 {
     return 'bar';
 }
+class InvokerTestFixture
+{
+    public $wasCalled = false;
+    public function foo()
+    {
+        // Use this to make sure we are not called from a static context
+        $this->wasCalled = true;
+        return 'bar';
+    }
+}
+

@@ -54,10 +54,9 @@ final class CallableResolver
     public function resolveFromContainer($callable)
     {
         // The callable is a string in the service:method notation.
-        /*
         if (is_string($callable) && substr_count($callable, ':') === 1) {
             $callable = explode(':', $callable, 2);
-        }*/
+        }
 
         // The callable is a string in the class::method notation.
         if (is_string($callable) && strpos($callable, '::') !== false) {

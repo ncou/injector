@@ -1,5 +1,5 @@
 <?php
-namespace Chiron\Invoker\Tests\Support;
+namespace Chiron\Injector\Test\Support;
 
 /**
  * EngineInterface defines car engine interface
