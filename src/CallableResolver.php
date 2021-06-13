@@ -12,6 +12,7 @@ use ReflectionException;
 use RuntimeException;
 
 //https://github.com/PHP-DI/Invoker/blob/a812493e87bb4ed413584e4a98208f54c43475ec/src/CallableResolver.php
+//https://github.com/yiisoft/yii-event/blob/master/src/CallableFactory.php#L55
 
 // TODO : classe à transformer en "Trait" et à intégrer dans la classe Invoker !!!!
 final class CallableResolver

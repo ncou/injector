@@ -64,9 +64,10 @@ final class Resolver
 
                 //throw new CannotResolveException($parameter);
 
+                // TODO : Remplacer le $fil et $line de l'exception avec le fichier php de la classe qui a levé l'exception ca sera plus clair dans le debuger lorsqu'on affichera le "snipet" du code.
 
                 //Possibly invalid class definition or syntax error
-                throw new InvalidArgumentException(sprintf('Invalid value for parameter %s', Reflection::toString($parameter)), $e->getCode());
+                throw new InvalidArgumentException(sprintf('Invalid value for parameter %s', Reflection::toString($parameter)), $e->getCode(), $e);
                 //throw new InvocationException("Unresolvable dependency resolving [$parameter] in class {$parameter->getDeclaringClass()->getName()}", $e->getCode());
                 //throw new InvocationException("Unresolvable dependency resolving [$parameter] in function " . $parameter->getDeclaringClass()->getName() . '::' . $parameter->getDeclaringFunction()->getName(), $e->getCode());
             }
