@@ -21,6 +21,16 @@ use Throwable;
 use ReflectionMethod;
 use ReflectionException;
 
+// TODO : utiliser un "cache" pour la reflection des paramétres de la méthode histoire de gagner du temps :
+//https://github.com/qunity/dependency-injection/blob/42c5eaac9d184d9db2e717ddf4f1c30b65a7ba91/src/DependencyInjection/Helper/Reflection.php#L56
+
+// TODO : gérer le reflectionuniontype;;class du PHP8
+//https://github.com/qunity/dependency-injection/blob/42c5eaac9d184d9db2e717ddf4f1c30b65a7ba91/src/DependencyInjection/Processor/CollectArguments.php#L132
+//https://github.com/spiral/framework/blob/1a8851523ad1eb62bcbb50be7eff47646c711692/src/Core/src/Container.php#L110
+//https://github.com/romanzipp/DTO/blob/5adff07cb90a578f5ee3785d1242932bb1b221dd/src/Types/UnionType.php#L21
+//https://github.com/IMPHP/reflect/blob/ffad353065144068005b0b018345d6226ba3558f/src/reflect/ReflectUnionType.php
+//https://github.com/suvera/winter-boot/blob/06d06230054faa155c5d585e2ac996b08621cf4b/src/reflection/ReflectionUtil.php#L100
+
 //https://github.com/yiisoft/injector/blob/master/src/Injector.php#L121
 
 //https://github.com/illuminate/container/blob/master/BoundMethod.php#L158
@@ -71,9 +81,6 @@ final class Resolver
                 //throw new InvocationException("Unresolvable dependency resolving [$parameter] in class {$parameter->getDeclaringClass()->getName()}", $e->getCode());
                 //throw new InvocationException("Unresolvable dependency resolving [$parameter] in function " . $parameter->getDeclaringClass()->getName() . '::' . $parameter->getDeclaringFunction()->getName(), $e->getCode());
             }
-
-
-            //die(var_dump($class));
 
             if (isset($parameters[$name]) && is_object($parameters[$name])) {
                 //Supplied by user as object
