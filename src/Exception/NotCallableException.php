@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Exception;
 
-class NotCallableException extends InvocationException
+class NotCallableException extends InjectorException
 {
     /**
      * @param mixed $value

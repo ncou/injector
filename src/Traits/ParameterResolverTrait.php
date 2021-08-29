@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Chiron\Injector;
+namespace Chiron\Injector\Traits;
 
 use Chiron\Injector\Exception\CannotResolveException;
+use Chiron\Injector\Exception\InjectorException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -21,8 +22,20 @@ use Throwable;
 use ReflectionMethod;
 use ReflectionException;
 
+use Chiron\Injector\Reflection;
+
+//https://github.com/nette/di/blob/f3608c4d8684c880c2af0cf7b4d2b7143bc459b0/src/DI/Resolver.php#L531
+//https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
+
+// TODO : regarder l'utilisation du isBuiltinType()
+//https://github.com/nette/di/blob/f3608c4d8684c880c2af0cf7b4d2b7143bc459b0/src/DI/Resolver.php#L491
+
+//https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L500
+//https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L662
+
 // TODO : utiliser un "cache" pour la reflection des paramétres de la méthode histoire de gagner du temps :
 //https://github.com/qunity/dependency-injection/blob/42c5eaac9d184d9db2e717ddf4f1c30b65a7ba91/src/DependencyInjection/Helper/Reflection.php#L56
+//https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L502
 
 // TODO : gérer le reflectionuniontype;;class du PHP8
 //https://github.com/qunity/dependency-injection/blob/42c5eaac9d184d9db2e717ddf4f1c30b65a7ba91/src/DependencyInjection/Processor/CollectArguments.php#L132
@@ -39,25 +52,21 @@ use ReflectionException;
 
 //https://github.com/symfony/symfony/blob/e60a876201b5b306d0c81a24d9a3db997192079c/src/Symfony/Component/DependencyInjection/Compiler/AutowirePass.php#L188
 
-final class Resolver
+// TODO : renommer en DependenciesResolverTrait ou DependencyResolverTrait ???? ou ArgumentResolverTrait
+trait ParameterResolverTrait
 {
-    /** ContainerInterface */
-    private $container;
-
-    /**
-     * Invoker constructor.
-     *
-     * @param $container
-     */
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
-
     //https://github.com/researchgate/injektor/blob/master/src/rg/injektor/DependencyInjectionContainer.php#L768
-    public function resolveArguments(ReflectionFunctionAbstract $reflection, array $parameters = []): array
+    // TODO : il faudrait pas changer le type ReflectionFunctionAbstract en ReflectionMethod (car on ne va pas vraiment dait de reflection sur une fonction globale) ????
+    // TODO : renommer en resolveDependencies() ???
+    //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
+    protected function resolveParameters(?ReflectionFunctionAbstract $reflection = null, array $parameters = []): array
     {
         $arguments = [];
+
+        // In case the constructor is not reflected, the $reflection will be null.
+        if (! $reflection) {
+            return $arguments;
+        }
 
         foreach ($reflection->getParameters() as $parameter) {
 
@@ -70,14 +79,14 @@ final class Resolver
 
 
 
-            } catch (\ReflectionException $e) {
+            } catch (ReflectionException $e) {
 
                 //throw new CannotResolveException($parameter);
 
                 // TODO : Remplacer le $fil et $line de l'exception avec le fichier php de la classe qui a levé l'exception ca sera plus clair dans le debuger lorsqu'on affichera le "snipet" du code.
 
                 //Possibly invalid class definition or syntax error
-                throw new InvalidArgumentException(sprintf('Invalid value for parameter %s', Reflection::toString($parameter)), $e->getCode(), $e);
+                throw new InjectorException(sprintf('Invalid value for parameter %s', Reflection::toString($parameter)), $e->getCode(), $e);
                 //throw new InvocationException("Unresolvable dependency resolving [$parameter] in class {$parameter->getDeclaringClass()->getName()}", $e->getCode());
                 //throw new InvocationException("Unresolvable dependency resolving [$parameter] in function " . $parameter->getDeclaringClass()->getName() . '::' . $parameter->getDeclaringFunction()->getName(), $e->getCode());
             }
@@ -131,6 +140,7 @@ final class Resolver
      *
      * @throws CannotResolveException
      */
+    //https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L267
     private function assertType(ReflectionParameter $parameter, $value): void
     {
         if ($value === null) {

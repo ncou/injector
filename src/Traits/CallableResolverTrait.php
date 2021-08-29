@@ -1,6 +1,6 @@
 <?php
 
-namespace Chiron\Injector;
+namespace Chiron\Injector\Traits;
 
 use Chiron\Injector\Exception\NotCallableException;
 use Psr\Container\ContainerInterface;
@@ -14,19 +14,8 @@ use RuntimeException;
 //https://github.com/PHP-DI/Invoker/blob/a812493e87bb4ed413584e4a98208f54c43475ec/src/CallableResolver.php
 //https://github.com/yiisoft/yii-event/blob/master/src/CallableFactory.php#L55
 
-// TODO : classe à transformer en "Trait" CallableResolverTrait et à intégrer dans la classe Invoker !!!!
-final class CallableResolver
+trait CallableResolverTrait
 {
-    /**
-     * @var ContainerInterface
-     */
-    private $container;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
-
     /**
      * Resolve the given callable into a real PHP callable.
      *
@@ -35,7 +24,7 @@ final class CallableResolver
      *
      * @throws NotCallableException
      */
-    public function resolve($callable): callable
+    protected function resolveCallable($callable): callable
     {
         $resolved = $this->resolveFromContainer($callable);
 
@@ -52,12 +41,13 @@ final class CallableResolver
      *
      * @throws NotCallableException
      */
-    public function resolveFromContainer($callable)
+    private function resolveFromContainer($callable)
     {
         // The callable is a string in the service:method notation.
+        /*
         if (is_string($callable) && substr_count($callable, ':') === 1) {
             $callable = explode(':', $callable, 2);
-        }
+        }*/
 
         // The callable is a string in the class::method notation.
         if (is_string($callable) && strpos($callable, '::') !== false) {
@@ -125,7 +115,6 @@ final class CallableResolver
 
         // Unrecognized stuff
         return $callable;
-
     }
 
     /**

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Chiron\Injector;
 
+//https://github.com/nette/utils/blob/master/src/Utils/Reflection.php
+//https://github.com/laravel/framework/blob/70490255a2249045699d0c9878f9fe847ad659b3/src/Illuminate/Support/Reflector.php#L64
+
 final class Reflection
 {
     /**
@@ -140,4 +143,29 @@ final class Reflection
             throw new \InvalidArgumentException;
         }
     }
+
+
+    /**
+     * Get the proper reflection instance for the given callback.
+     *
+     * @param  callable|string  $callback
+     * @return \ReflectionFunctionAbstract
+     *
+     * @throws \ReflectionException
+     */
+    /*
+    // https://github.com/laravel/framework/blob/8.x/src/Illuminate/Container/BoundMethod.php#L138
+    protected static function getCallReflector($callback)
+    {
+        if (is_string($callback) && strpos($callback, '::') !== false) {
+            $callback = explode('::', $callback);
+        } elseif (is_object($callback) && ! $callback instanceof Closure) {
+            $callback = [$callback, '__invoke'];
+        }
+
+        return is_array($callback)
+                        ? new ReflectionMethod($callback[0], $callback[1])
+                        : new ReflectionFunction($callback);
+    }*/
+
 }

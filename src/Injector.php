@@ -8,7 +8,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Chiron\Injector\Exception\CannotResolveException;
-use Chiron\Injector\Exception\InvocationException;
+use Chiron\Injector\Exception\InjectorException;
 use Chiron\Injector\Exception\NotCallableException;
 use Chiron\Injector\ReflectionCallable;
 use Chiron\Injector\ReflectionCallable2;
@@ -23,10 +23,14 @@ use RuntimeException;
 use ReflectionFunctionAbstract;
 use InvalidArgumentException;
 use Throwable;
-
 use ReflectionMethod;
 use ReflectionException;
+use Chiron\Injector\Traits\ParameterResolverTrait;
+use Chiron\Injector\Traits\CallableResolverTrait;
+use Chiron\Injector\Traits\ReflectorTrait;
 
+
+//https://github.com/laravel/framework/blob/8.x/src/Illuminate/Container/BoundMethod.php
 
 //https://github.com/rdlowrey/auryn/blob/master/lib/Injector.php#L237
 //https://github.com/yiisoft/injector/blob/master/src/Injector.php
@@ -43,13 +47,16 @@ use ReflectionException;
 // TODO : créer deux classes : Invoker::class et Factory::class qui auront des méthodes "static call()" et "static make()" avec en paramétre le container, et la classe Injector se chargera d'appeller ces méthodes. Cela permet de séparer le code source, mais aussi de pouvoir utiliser uniquement une partie du code (à savoir par exemple dans les classe AbstractBootloader::class on pourra directement faire un appel à Invoker::invoke() et idem pour la partie Factory. Cela évitera d'instancer une classe générique qui est Injector !!!)
 // TODO : mettre le code du resolver dans un répertoire Trait et insérer directement le "Trait" dans les classes Factory et Invoker !!!!
 
-final class Injector
+// TODO : ajouter les interfaces InvokerInterface et FactoryInterface + créer une classe AbstractInjector (on étendrait de cette classe) qui utiliserait un trait pour résoudre les parameters et aurait les méthodes make+invoke, comme ca on pourrait aussi étendre de cette classe abstraite dans le Container sans avoir besoin de faire un new Injector($container) !!!!
+// TODO : eventuellement créer une InjectorInterface qui implémenterai les 2 interfaces (InvokerInterface+FactoryInterface) et on pourrait binder comme singleton cette interface dans le constructeur du Container !!!!
+final class Injector implements InvokerInterface, FactoryInterface
 {
+    use ParameterResolverTrait;
+    use CallableResolverTrait;
+    use ReflectorTrait;
+
     /** ContainerInterface */
     private $container;
-
-    /** Resolver */
-    private $resolver;
 
     /**
      * Invoker constructor.
@@ -59,11 +66,7 @@ final class Injector
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->resolver = new Resolver($container);
     }
-
-
-
 
     // TODO : améliorer le code regarder ici   =>   https://github.com/illuminate/container/blob/master/Container.php#L778
     // TODO : améliorer le code et regarder ici => https://github.com/thephpleague/container/blob/68c148e932ef9959af371590940b4217549b5b65/src/Definition/Definition.php#L225
@@ -72,79 +75,57 @@ final class Injector
     // TODO : améliorer le Circular exception avec le code : https://github.com/symfony/dependency-injection/blob/master/Container.php#L236
     // TODO : il n'y a pas un risque de références circulaires si on appel directement cette méthode qui est public.
     // TODO : ajouter le typehint pour le retour de la fonction avec "make(): object"
-    public function make(string $className, array $arguments = [])
+    public function build(string $class, array $parameters = [])
     {
-        // TODO : vérifier si on a besoin de cette méthode. Et il faudrait surement qu'elle soit aussi appellée dans la partie 'call()'
-        $arguments = $this->resolveArguments($arguments);
-
-        $class = $this->reflectClass($className);
-
         // https://github.com/spiral/core/blob/02580dff7f1fcbc5e74caa1f78ea84c0e4c0d92e/src/Container.php#L534
         // https://github.com/spiral/core/blob/02580dff7f1fcbc5e74caa1f78ea84c0e4c0d92e/src/Container.php#L551
         // https://github.com/spiral/core/blob/02580dff7f1fcbc5e74caa1f78ea84c0e4c0d92e/src/Container.php#L558
         // TODO : améliorer ce bout de code, on fait 2 fois un new class, alors qu'on pourrait en faire qu'un !!! https://github.com/illuminate/container/blob/master/Container.php#L815
-        if ($constructor = $class->getConstructor()) {
-            $arguments = $this->resolver->resolveArguments($constructor, $arguments);
+        // TODO : il faudrait que si il n'y a pas de constructeur la méthode resolveArguments retourne d'office un tableau vide, comme ca on peut faire un seul return avec un new $className qui aura en paramétre un tableau vide si le constructeur n'existe pas !!!! => https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ParameterResolver.php#L45
 
-            return new $className(...$arguments);
-        }
+        $reflection = $this->reflectClass($class);
+        // Try to match the needed parameters with the given parameters.
+        $arguments = $this->resolveParameters($reflection->getConstructor(), $parameters);
 
-        //$reflection->newInstanceArgs($resolved);
-        return new $className();
+        return $reflection->newInstanceArgs($arguments);
     }
 
-    // TODO : ajouter la signature dans l'interface
-    // TODO : regarder aussi ici : https://github.com/mrferos/di/blob/master/src/Definition/AbstractDefinition.php#L75
-    // TODO : regarder ici pour utiliser le arobase @    https://github.com/slince/di/blob/master/DefinitionResolver.php#L210
-    // TODO : améliorer le resolve avec la gestion des classes "Raw" et "Reference" =>   https://github.com/thephpleague/container/blob/91a751faabb5e3f5e307d571e23d8aacc4acde88/src/Argument/ArgumentResolverTrait.php#L17
-    // TODO : Faire des tests avec des paramétres Variadic (...$variadic) et avec un typehint 'object' qui est supporté depuis PHP 7.3 !!!!
-    private function resolveArguments(array $arguments): array
+    /**
+     * Invoke a callback with resolving dependencies in parameters.
+     *
+     * This methods allows invoking a callback and let type hinted parameter names to be
+     * resolved as objects of the Container. It additionally allow calling function using named parameters.
+     *
+     * For example, the following callback may be invoked using the Container to resolve the formatter dependency:
+     *
+     * ```php
+     * $formatString = function($string, \yii\i18n\Formatter $formatter) {
+     *    // ...
+     * }
+     * $container->invoke($formatString, ['string' => 'Hello World!']);
+     * ```
+     *
+     * This will pass the string `'Hello World!'` as the first param, and a formatter instance created
+     * by the DI container as the second param to the callable.
+     *
+     * @param callable $callback callable to be invoked.
+     * @param array $params The array of parameters for the function.
+     * This can be either a list of parameters, or an associative array representing named function parameters.
+     * @return mixed the callback return value.
+     * @throws MissingRequiredArgumentException  if required argument is missing.
+     * @throws ContainerExceptionInterface if a dependency cannot be resolved or if a dependency cannot be fulfilled.
+     * @throws \ReflectionException
+     */
+    //$callback => callable|array|string
+    public function invoke($callback, array $parameters = [])
     {
-        foreach ($arguments as &$arg) {
-            if (! is_string($arg)) {
-                continue;
-            }
+        $callable = $this->resolveCallable($callback);
+        $reflection = $this->reflectCallable($callable);
+        // Try to match the needed parameters with the given parameters.
+        $arguments = $this->resolveParameters($reflection, $parameters);
 
-            //if (! is_null($this->container) && $this->container->has($arg)) {
-            if ($this->container->has($arg)) {
-                $arg = $this->container->get($arg);
-
-                continue;
-            }
-        }
-
-        return $arguments;
+        return $reflection->invokeArgs($arguments);
     }
-
-    //https://github.com/auraphp/Aura.Di/blob/4.x/src/Resolver/Reflector.php#L74
-    //https://github.com/doctrine/instantiator/blob/master/src/Doctrine/Instantiator/Instantiator.php#L116
-    //https://github.com/doctrine/instantiator/blob/master/src/Doctrine/Instantiator/Exception/InvalidArgumentException.php
-    private function reflectClass(string $className): ReflectionClass
-    {
-        // TODO : mettre un message d'erreur plus clair !!! + remonter ce 'if' directement dans la méthode build ca sera plus lisible !!!!
-        if (! class_exists($className)) {
-            // TODO  : on devrait pas renvoyer une ContainerException ????
-            throw new InvalidArgumentException("Entry '{$className}' cannot be resolved");
-        }
-
-        // TODO : vérifier que le constructeur est public !!!! => https://github.com/PHP-DI/PHP-DI/blob/cdcf21d2a8a60605e81ec269342d48b544d0dfc7/src/Definition/Source/ReflectionBasedAutowiring.php#L31
-        // TODO : déplacer ce bout de code dans une méthode "reflectClass()"
-        $reflection = new ReflectionClass($className);
-
-        // TODO : ajouter une gestion des exceptions circulaires.
-        // TODO : améliorer la gestion des classes non instanciables => https://github.com/illuminate/container/blob/master/Container.php#L1001
-
-        // Prevent error if you try to instanciate an abstract class or a class with a private constructor.
-        if (! $reflection->isInstantiable()) {
-            throw new InvalidArgumentException(sprintf(
-                'Entry "%s" cannot be resolved: the class is not instantiable',
-                $className
-            ));
-        }
-
-        return $reflection;
-    }
-
 
 
 
@@ -174,98 +155,100 @@ final class Injector
 
 
 
-
-
     /**
-     * Invoke a callback with resolving dependencies in parameters.
+     * Invoke a callback with resolving dependencies based on parameter types.
      *
      * This methods allows invoking a callback and let type hinted parameter names to be
-     * resolved as objects of the Container. It additionally allow calling function using named parameters.
+     * resolved as objects of the Container. It additionally allow calling function passing named arguments.
      *
      * For example, the following callback may be invoked using the Container to resolve the formatter dependency:
      *
      * ```php
-     * $formatString = function($string, \yii\i18n\Formatter $formatter) {
+     * $formatString = function($string, \Yiisoft\I18n\MessageFormatterInterface $formatter) {
      *    // ...
      * }
-     * $container->invoke($formatString, ['string' => 'Hello World!']);
+     *
+     * $injector = new Yiisoft\Injector\Injector($container);
+     * $injector->invoke($formatString, ['string' => 'Hello World!']);
      * ```
      *
-     * This will pass the string `'Hello World!'` as the first param, and a formatter instance created
-     * by the DI container as the second param to the callable.
+     * This will pass the string `'Hello World!'` as the first argument, and a formatter instance created
+     * by the DI container as the second argument.
      *
-     * @param callable $callback callable to be invoked.
-     * @param array $params The array of parameters for the function.
-     * This can be either a list of parameters, or an associative array representing named function parameters.
-     * @return mixed the callback return value.
-     * @throws MissingRequiredArgumentException  if required argument is missing.
+     * @param callable $callable callable to be invoked.
+     * @param array $arguments The array of the function arguments.
+     * This can be either a list of arguments, or an associative array where keys are argument names.
+     *
+     * @throws MissingRequiredArgumentException if required argument is missing.
      * @throws ContainerExceptionInterface if a dependency cannot be resolved or if a dependency cannot be fulfilled.
-     * @throws \ReflectionException
+     * @throws ReflectionException
+     *
+     * @return mixed the callable return value.
      */
-    //$callback => callable|array|string
-    public function call($callback, array $params = [])
+    /*
+    //https://github.com/yiisoft/injector/blob/master/src/Injector.php#L62
+    public function invoke(callable $callable, array $arguments = [])
     {
-        $resolved = (new CallableResolver($this->container))->resolve($callback);
+        $callable = Closure::fromCallable($callable);
+        $reflection = new ReflectionFunction($callable);
+        return $reflection->invokeArgs($this->resolveDependencies($reflection, $arguments));
+    }*/
 
-        return $this->invoke($resolved, $params);
-    }
 
-    public function call2($callback, array $params = [])
+    /**
+     * Creates an object of a given class with resolving constructor dependencies based on parameter types.
+     *
+     * This methods allows invoking a constructor and let type hinted parameter names to be
+     * resolved as objects of the Container. It additionally allow calling constructor passing named arguments.
+     *
+     * For example, the following constructor may be invoked using the Container to resolve the formatter dependency:
+     *
+     * ```php
+     * class StringFormatter
+     * {
+     *     public function __construct($string, \Yiisoft\I18n\MessageFormatterInterface $formatter)
+     *     {
+     *         // ...
+     *     }
+     * }
+     *
+     * $injector = new Yiisoft\Injector\Injector($container);
+     * $stringFormatter = $injector->make(StringFormatter::class, ['string' => 'Hello World!']);
+     * ```
+     *
+     * This will pass the string `'Hello World!'` as the first argument, and a formatter instance created
+     * by the DI container as the second argument.
+     *
+     * @param string $class name of the class to be created.
+     * @psalm-param class-string $class
+     *
+     * @param array $arguments The array of the function arguments.
+     * This can be either a list of arguments, or an associative array where keys are argument names.
+     *
+     * @throws ContainerExceptionInterface
+     * @throws InvalidArgumentException|MissingRequiredArgumentException
+     * @throws ReflectionException
+     *
+     * @return mixed object of the given class.
+     *
+     * @psalm-suppress MixedMethodCall
+     */
+    /*
+    //https://github.com/yiisoft/injector/blob/master/src/Injector.php#L107
+    public function make(string $class, array $arguments = [])
     {
-        $resolver = new CallableResolver($this->container);
-        try {
-            $resolved = $resolver->resolve($callback);
-        } catch (NotCallableException $e) {
-            // check if the method we try to call is private or protected.
-            $resolved = $resolver->resolveFromContainer($callback);
-            if (! is_callable($resolved) && is_array($resolved) && method_exists($resolved[0], $resolved[1])) {
-
-                $reflection = new ReflectionMethod($resolved[0], $resolved[1]);
-                $reflection->setAccessible(true);
-
-                //Invoking factory method with resolved arguments
-                return $reflection->invokeArgs(
-                    $resolved[0],
-                    $this->resolver->resolveArguments($reflection, $params)
-                );
-
-
-            }
+        $classReflection = new ReflectionClass($class);
+        if (!$classReflection->isInstantiable()) {
+            throw new \InvalidArgumentException("Class $class is not instantiable.");
+        }
+        $reflection = $classReflection->getConstructor();
+        if ($reflection === null) {
+            // Method __construct() does not exist
+            return new $class();
         }
 
-        return $this->invoke($resolved, $params);
-    }
-
-    private function invoke(callable $callable, array $args = [])
-    {
-        $reflection = new ReflectionCallable($callable);
-        $parameters = $this->resolver->resolveArguments($reflection, $args);
-
-        return call_user_func_array($callable, $parameters);
-        //return $reflection->invoke($parameters);
-    }
-
-    //***********************
-
-
-    public function call3($callback, array $params = [])
-    {
-        $resolved = (new CallableResolver($this->container))->resolveFromContainer($callback);
-
-        return $this->invoke2($resolved, $params);
-    }
-
-    public function invoke2($callable, array $args = [])
-    {
-        $reflection = new ReflectionCallable2($callable);
-        $parameters = $this->resolver->resolveArguments($reflection, $args);
-
-        //return call_user_func_array($callable, $parameters);
-        return $reflection->invokeArgs($parameters);
-    }
-
-    //**********************
-
+        return new $class(...$this->resolveDependencies($reflection, $arguments));
+    }*/
 
 
 
@@ -313,6 +296,4 @@ final class Injector
         return $reflection->hasMethod('__invoke')
             && $reflection->getMethod('__invoke')->isPublic();
     }*/
-
-
 }
