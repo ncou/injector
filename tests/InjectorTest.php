@@ -1,56 +1,64 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Chiron\Injector\Test;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Container\NotFoundExceptionInterface;
-use Chiron\Container\Container;
+use Chiron\Injector\Exception\CannotResolveException;
+use Chiron\Injector\Test\Container\SimpleContainer as Container;
 use Chiron\Injector\Injector;
 use Chiron\Injector\MissingRequiredArgumentException;
 use Chiron\Injector\Test\Support\ColorInterface;
 use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineMarkTwo;
 use Chiron\Injector\Test\Support\StaticMethod;
+use Chiron\Injector\Exception\NotCallableException;
 
-/**
- * InjectorTest contains tests for \yii\di\Injector
- */
 class InjectorTest extends TestCase
 {
-    public function testCall(): void
+    public function testInvoke(): void
     {
-        $container = new Container();
-
-        $container->bind(EngineInterface::class, EngineMarkTwo::class);
+        $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
 
         $getEngineName = static function (EngineInterface $engine) {
             return $engine->getName();
         };
 
-        $engineName = (new Injector($container))->call($getEngineName);
+        $engineName = (new Injector($container))->invoke($getEngineName);
 
         $this->assertSame('Mark Two', $engineName);
     }
 
-    public function testCallWithStaticMethod(): void
+    public function testInvokeWithStaticMethod(): void
     {
         $container = new Container();
-        $engineName = (new Injector($container))->call([StaticMethod::class, 'getName']);
+        $engineName = (new Injector($container))->invoke([StaticMethod::class, 'getName']);
 
         $this->assertSame('Mark Two', $engineName);
     }
 
-    public function testCallWithNonStaticMethod(): void
+    // TODO : améliorer les tests !!!! https://github.com/PHP-DI/Invoker/blob/master/tests/InvokerTest.php#L363
+    public function testInvokeWithNonStaticMethod(): void
     {
+        $this->expectExceptionMessage('Cannot call Chiron\Injector\Test\Support\StaticMethod::getNameNonStatic() because getNameNonStatic() is not a static method and "Chiron\Injector\Test\Support\StaticMethod" is not a container entry');
+        $this->expectException(NotCallableException::class);
+
         $container = new Container();
-        $engineName = (new Injector($container))->call([StaticMethod::class, 'getNameNonStatic']);
+        $engineName = (new Injector($container))->invoke([StaticMethod::class, 'getNameNonStatic']);
 
         $this->assertSame('Mark Two', $engineName);
     }
 
-    public function testMissingRequiredParameter(): void
+    public function testInvokeMissingRequiredParameter(): void
     {
+        // TODO : améliorer le message d'erreur dans le cas d'une closure. Eventuellement afficher le nom du fichier + ligne, ca sera plus simple à debugger !!!!
+        $this->expectExceptionMessage('Cannot resolve a value for parameter "$two" in callable "Chiron\Injector\Test\InjectorTest::Chiron\Injector\Test\{closure}');
+        $this->expectException(CannotResolveException::class);
+
         $container = new Container([
-            EngineInterface::class => EngineMarkTwo::class,
+            EngineInterface::class => new EngineMarkTwo(),
         ]);
 
         $getEngineName = static function (EngineInterface $engine, $two) {
@@ -59,14 +67,17 @@ class InjectorTest extends TestCase
 
         $injector = new Injector($container);
 
-        $this->expectException(NotFoundExceptionInterface::class);
-        $injector->call($getEngineName);
+        $injector->invoke($getEngineName);
     }
 
-    public function testMissingRequiredClassParameter(): void
+    public function testInvokeMissingRequiredClassParameter(): void
     {
+        // TODO : à terme in ne faudrait pas renvoyer une container exception mais directement une CannotResolveException
+        $this->expectExceptionMessage('No definition or class found for "Chiron\Injector\Test\Support\ColorInterface');
+        $this->expectException(NotFoundExceptionInterface::class);
+
         $container = new Container([
-            EngineInterface::class => EngineMarkTwo::class,
+            EngineInterface::class => new EngineMarkTwo(),
         ]);
 
         $getEngineName = static function (EngineInterface $engine, ColorInterface $color) {
@@ -75,7 +86,6 @@ class InjectorTest extends TestCase
 
         $injector = new Injector($container);
 
-        $this->expectException(NotFoundExceptionInterface::class);
-        $injector->call($getEngineName);
+        $injector->invoke($getEngineName);
     }
 }

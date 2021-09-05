@@ -21,8 +21,12 @@ class CannotResolveException extends InjectorException
             $location = $function->getDeclaringClass()->getName() . '::' . $location;
         }
 
-        $this->file = $function->getFileName();
-        $this->line = $function->getStartLine();
+        // If the class is defined in the PHP core or in a PHP extension, getFileName return false.
+        if ($function->getFileName() !== false) {
+            $this->file = $function->getFileName();
+            $this->line = $function->getStartLine();
+        }
+
         $this->message = sprintf('Cannot resolve a value for parameter "$%s" in callable "%s"', $parameter->getName(), $location);
     }
 }

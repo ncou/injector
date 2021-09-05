@@ -117,6 +117,7 @@ final class Injector implements InvokerInterface, FactoryInterface
      * @throws \ReflectionException
      */
     //$callback => callable|array|string
+    // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif (code à utiliser que dans le cadre d'un invoke() ca n'a pas de sens de ne pas avoir de tableau associatif pour la partie du code ou on va builder un classe !!!! <== hum à vérifier si ce commentaire est pertinent NCOU) : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
     public function invoke($callback, array $parameters = [])
     {
         $callable = $this->resolveCallable($callback);

@@ -70,8 +70,9 @@ final class Reflection
     }
 
     /**
+     * Returns the default value of parameter. If it is a constant, it returns its value.
      * @return mixed
-     * @throws \ReflectionException when default value is not available or resolvable
+     * @throws \ReflectionException  If the parameter does not have a default value or the constant cannot be resolved
      */
     public static function getParameterDefaultValue(\ReflectionParameter $param)
     {
@@ -79,6 +80,7 @@ final class Reflection
             $const = $orig = $param->getDefaultValueConstantName();
             $pair = explode('::', $const);
             if (isset($pair[1])) {
+                // TODO : appeller la fonction normalizeType directement !!!! https://github.com/nette/utils/blob/master/src/Utils/Reflection.php#L158
                 if (strtolower($pair[0]) === 'self') {
                     $pair[0] = $param->getDeclaringClass()->getName();
                 }
@@ -88,6 +90,7 @@ final class Reflection
                     $name = self::toString($param);
                     throw new \ReflectionException("Unable to resolve constant $orig used as default value of $name.", 0, $e);
                 }
+
                 return $rcc->getValue();
             } elseif (!defined($const)) {
                 $const = substr((string) strrchr($const, '\\'), 1);
@@ -96,8 +99,10 @@ final class Reflection
                     throw new \ReflectionException("Unable to resolve constant $orig used as default value of $name.");
                 }
             }
+
             return constant($const);
         }
+
         return $param->getDefaultValue();
     }
 

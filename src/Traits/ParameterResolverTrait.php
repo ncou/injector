@@ -59,6 +59,7 @@ trait ParameterResolverTrait
     // TODO : il faudrait pas changer le type ReflectionFunctionAbstract en ReflectionMethod (car on ne va pas vraiment dait de reflection sur une fonction globale) ????
     // TODO : renommer en resolveDependencies() ???
     //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
+    // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
     protected function resolveParameters(?ReflectionFunctionAbstract $reflection = null, array $parameters = []): array
     {
         $arguments = [];
@@ -108,7 +109,7 @@ trait ParameterResolverTrait
                 if ($parameter->isDefaultValueAvailable()) {
                     //Default value
                     //$arguments[] = $parameter->getDefaultValue();
-                    $arguments[] = Reflection::getParameterDefaultValue($parameter);
+                    $arguments[] = Reflection::getParameterDefaultValue($parameter); // TODO : attention car cette méthode peut lever un ReflectionException !!! qui ne sera donc pas catché, il faudrait le catcher et convertir en CannotResolveException pour faire un throw !!!!
                     continue;
                 }
                 //Unable to resolve scalar argument value
@@ -125,9 +126,11 @@ trait ParameterResolverTrait
                     $arguments[] = null;
                     continue;
                 }
-                throw $e;
+                throw $e; // TODO : il faudrait plutot renvoyer une CannotResolveException ou une DependencyException du genre : https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ObjectCreator.php#L147
             }
         }
+
+        // TODO : lever une exception si le parametre n'est pas optionnel et qu'on n'a pas réussi à le résoudre !!!! https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L177
 
         return $arguments;
     }
@@ -141,6 +144,7 @@ trait ParameterResolverTrait
      * @throws CannotResolveException
      */
     //https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L267
+    //https://github.com/symfony/dependency-injection/blob/5.3/Tests/Compiler/CheckTypeDeclarationsPassTest.php
     private function assertType(ReflectionParameter $parameter, $value): void
     {
         if ($value === null) {
@@ -152,6 +156,7 @@ trait ParameterResolverTrait
             return;
         }
 
+        // TODO : attention il me semble que en php8 le getType retournera le pint d'interrogation en cas de nullable, exemple ?int ou ?string et par défaut si on a rien précisé il retourne "mixed" et pas null (ce point est quand même à vérifier !!!)
         // TODO : utiliser la méthode hasType()
         $type = $parameter->getType();
 
@@ -160,7 +165,7 @@ trait ParameterResolverTrait
         }
 
         // TODO : on devrait aussi vérifier que la classe est identique, et vérifier aussi le type string pour que cette méthode soit plus générique. Vérifier ce qui se passe si on fait pas cette vérification c'est à dire appeller une fonction avec des paramétres qui n'ont pas le bon typehint !!!!
-        $typeName = $type->getName();
+        $typeName = $type->getName(); // TODO : attention ca ne va fonctionner que si c'est un ReflectionNamedType !!!!
         if ($typeName == 'array' && !is_array($value)) {
             throw new CannotResolveException($parameter);
         }
