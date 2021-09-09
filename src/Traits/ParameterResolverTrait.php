@@ -60,14 +60,9 @@ trait ParameterResolverTrait
     // TODO : renommer en resolveDependencies() ???
     //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
     // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
-    protected function resolveParameters(?ReflectionFunctionAbstract $reflection = null, array $parameters = []): array
+    protected function resolveParameters(ReflectionFunctionAbstract $reflection = null, array $parameters = []): array
     {
         $arguments = [];
-
-        // In case the constructor is not reflected, the $reflection will be null.
-        if (! $reflection) {
-            return $arguments;
-        }
 
         foreach ($reflection->getParameters() as $parameter) {
 
@@ -147,6 +142,7 @@ trait ParameterResolverTrait
     //https://github.com/symfony/dependency-injection/blob/5.3/Tests/Compiler/CheckTypeDeclarationsPassTest.php
     private function assertType(ReflectionParameter $parameter, $value): void
     {
+        // TODO : il faudrait plutot lever l'exception si le $value est à null et que le paramétre ne supporte pas $parameter->allowsNull()
         if ($value === null) {
             if (!$parameter->isOptional() &&
                 !($parameter->isDefaultValueAvailable() && $parameter->getDefaultValue() === null)
@@ -156,24 +152,79 @@ trait ParameterResolverTrait
             return;
         }
 
-        // TODO : attention il me semble que en php8 le getType retournera le pint d'interrogation en cas de nullable, exemple ?int ou ?string et par défaut si on a rien précisé il retourne "mixed" et pas null (ce point est quand même à vérifier !!!)
-        // TODO : utiliser la méthode hasType()
-        $type = $parameter->getType();
 
-        if ($type === null) {
+        /*
+        // TODO : utiliser ce bout de code !!!!
+        if ($value === null && $parameter->allowsNull()) {
+            return;
+        }
+        */
+
+
+
+        // TODO : attention il me semble que en php8 le getType retournera le pint d'interrogation en cas de nullable, exemple ?int ou ?string et par défaut si on a rien précisé il retourne "mixed" et pas null (ce point est quand même à vérifier !!!)
+        // The reflectionType could be null if there is no parameter typehint.
+        $reflectionType = $parameter->getType();
+
+        // Handle the case when the parameter has no typehint.
+        if (! $reflectionType instanceof \ReflectionNamedType) {
             return;
         }
 
+
+
+
+
         // TODO : on devrait aussi vérifier que la classe est identique, et vérifier aussi le type string pour que cette méthode soit plus générique. Vérifier ce qui se passe si on fait pas cette vérification c'est à dire appeller une fonction avec des paramétres qui n'ont pas le bon typehint !!!!
-        $typeName = $type->getName(); // TODO : attention ca ne va fonctionner que si c'est un ReflectionNamedType !!!!
-        if ($typeName == 'array' && !is_array($value)) {
+        $type = $reflectionType->getName();
+
+        // TODO : gérer le cas ou le typehint est 'self' avec ce bout de code par exemple. Ou alors voir si on a une méthode identique dans la classe d'utilitaires Reflection !!!!
+        /*
+        if ('self' === $type) {
+            $type = $parameter->getDeclaringClass()->getName();
+        }*/
+
+        if ($type == 'array' && !is_array($value)) {
+            throw new CannotResolveException($parameter); // TODO : lever plutot une 'InvalidParameterTypeException::class' =>     https://github.com/symfony/dependency-injection/blob/999cfcf6400502bbc145b2bf36935770770ba6ca/Exception/InvalidParameterTypeException.php#L20
+        }
+        if (($type == 'int' || $type == 'float') && !is_numeric($value)) {
             throw new CannotResolveException($parameter);
         }
-        if (($typeName == 'int' || $typeName == 'float') && !is_numeric($value)) {
-            throw new CannotResolveException($parameter);
-        }
-        if ($typeName == 'bool' && !is_bool($value) && !is_numeric($value)) {
+        if ($type == 'bool' && !is_bool($value) && !is_numeric($value)) {
             throw new CannotResolveException($parameter);
         }
     }
+
+    /**
+     * Get the class name of the given parameter's type, if possible.
+     *
+     * From Reflector::getParameterClassName() in Illuminate\Support.
+     *
+     * @param  \ReflectionParameter  $parameter
+     * @return string|null
+     */
+    // https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Util.php#L52
+    /*
+    public static function getParameterClassName($parameter)
+    {
+        $type = $parameter->getType();
+
+        if (! $type instanceof ReflectionNamedType || $type->isBuiltin()) {
+            return;
+        }
+
+        $name = $type->getName();
+
+        if (! is_null($class = $parameter->getDeclaringClass())) {
+            if ($name === 'self') {
+                return $class->getName();
+            }
+
+            if ($name === 'parent' && $parent = $class->getParentClass()) {
+                return $parent->getName();
+            }
+        }
+
+        return $name;
+    }*/
 }

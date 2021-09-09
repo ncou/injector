@@ -51,8 +51,8 @@ use Chiron\Injector\Traits\ReflectorTrait;
 // TODO : eventuellement créer une InjectorInterface qui implémenterai les 2 interfaces (InvokerInterface+FactoryInterface) et on pourrait binder comme singleton cette interface dans le constructeur du Container !!!!
 final class Injector implements InvokerInterface, FactoryInterface
 {
-    use ParameterResolverTrait;
     use CallableResolverTrait;
+    use ParameterResolverTrait;
     use ReflectorTrait;
 
     /** ContainerInterface */
@@ -83,18 +83,27 @@ final class Injector implements InvokerInterface, FactoryInterface
         // TODO : améliorer ce bout de code, on fait 2 fois un new class, alors qu'on pourrait en faire qu'un !!! https://github.com/illuminate/container/blob/master/Container.php#L815
         // TODO : il faudrait que si il n'y a pas de constructeur la méthode resolveArguments retourne d'office un tableau vide, comme ca on peut faire un seul return avec un new $className qui aura en paramétre un tableau vide si le constructeur n'existe pas !!!! => https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ParameterResolver.php#L45
 
+        // Throw an exception if the class is not found or is not instantiable.
         $reflection = $this->reflectClass($class);
-        // Try to match the needed parameters with the given parameters.
-        $arguments = $this->resolveParameters($reflection->getConstructor(), $parameters);
+        $constructor = $reflection->getConstructor();
 
-        return $reflection->newInstanceArgs($arguments);
+        if ($constructor !== null) {
+            // Try to match the constructor parameters with the given parameters.
+            $arguments = $this->resolveParameters($constructor, $parameters);
+            $instance = $reflection->newInstanceArgs($arguments);
+        } else {
+            $instance = $reflection->newInstance();
+        }
+
+        return $instance;
     }
 
     /**
      * Invoke a callback with resolving dependencies in parameters.
      *
      * This methods allows invoking a callback and let type hinted parameter names to be
-     * resolved as objects of the Container. It additionally allow calling function using named parameters.
+     * resolved as objects of
+     the Container. It additionally allow calling function using named parameters.
      *
      * For example, the following callback may be invoked using the Container to resolve the formatter dependency:
      *
@@ -122,7 +131,7 @@ final class Injector implements InvokerInterface, FactoryInterface
     {
         $callable = $this->resolveCallable($callback);
         $reflection = $this->reflectCallable($callable);
-        // Try to match the needed parameters with the given parameters.
+        // Try to match the callable parameters with the given parameters.
         $arguments = $this->resolveParameters($reflection, $parameters);
 
         return $reflection->invokeArgs($arguments);

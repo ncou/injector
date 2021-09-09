@@ -6,6 +6,8 @@ namespace Chiron\Injector\Exception;
 
 //https://github.com/spiral/core/blob/86ffeac422f2f368a890ccab71cf6a8b20668176/src/Exception/Container/ArgumentException.php
 
+//https://github.com/symfony/dependency-injection/blob/999cfcf6400502bbc145b2bf36935770770ba6ca/Exception/InvalidParameterTypeException.php#L20
+
 // TODO : renommer en CannotResolveParameterException ???? ou ParameterResolveException. ou renommer en ArgumentException ou ParameterException
 class CannotResolveException extends InjectorException
 {

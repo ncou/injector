@@ -88,4 +88,19 @@ class InjectorTest extends TestCase
 
         $injector->invoke($getEngineName);
     }
+
+    /**
+     * @requires PHP >= 8.0
+     */
+    /*
+    public function testInjectionUsingUnionTypes(): void
+    {
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage('union type hint that cannot be inferred unambiguously');
+
+        $container = new Container();
+
+        $container->resolveArguments(new \ReflectionMethod(UnionTypes::class, 'example'));
+    }*/
+
 }

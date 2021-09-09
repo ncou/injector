@@ -25,6 +25,7 @@ use Reflector;
 
 use Chiron\Injector\Reflection;
 
+// TODO : renommer en InteractWithReflectionTrait
 trait ReflectorTrait
 {
     protected function reflectClass(string $class): ReflectionClass
@@ -50,7 +51,7 @@ trait ReflectorTrait
         // https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L510
         // TODO : gérer un message d'erreur différent si on a un constructeur privé ou protected ??? https://github.com/nette/di/blob/f3608c4d8684c880c2af0cf7b4d2b7143bc459b0/src/DI/Resolver.php#L207
         // TODO : sortir ce test du isInstanciable et le reporter aprés cette méthode car on souhaite ici refléter une class et pas forcément ajouter de la logique métier dans cette fonction !!!!
-        // Prevent error if you try to instanciate an abstract class or a class with a private constructor ou un Trait ou une Interface !!!.
+        // Not instantiable in case of class Abstract/Trait/Interface or with a private constructor.
         if (! $reflection->isInstantiable()) {
             // https://github.com/illuminate/container/blob/master/Container.php#L1079
             // TODO : créer un ClassNotInstantiableException::class
@@ -69,37 +70,4 @@ trait ReflectorTrait
 
         return $reflection;
     }
-
-    /**
-     * Get the class name of the given parameter's type, if possible.
-     *
-     * From Reflector::getParameterClassName() in Illuminate\Support.
-     *
-     * @param  \ReflectionParameter  $parameter
-     * @return string|null
-     */
-    // https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Util.php#L52
-    /*
-    public static function getParameterClassName($parameter)
-    {
-        $type = $parameter->getType();
-
-        if (! $type instanceof ReflectionNamedType || $type->isBuiltin()) {
-            return;
-        }
-
-        $name = $type->getName();
-
-        if (! is_null($class = $parameter->getDeclaringClass())) {
-            if ($name === 'self') {
-                return $class->getName();
-            }
-
-            if ($name === 'parent' && $parent = $class->getParentClass()) {
-                return $parent->getName();
-            }
-        }
-
-        return $name;
-    }*/
 }
