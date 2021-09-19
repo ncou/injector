@@ -6,6 +6,7 @@ namespace Chiron\Injector;
 
 //https://github.com/nette/utils/blob/master/src/Utils/Reflection.php
 //https://github.com/laravel/framework/blob/70490255a2249045699d0c9878f9fe847ad659b3/src/Illuminate/Support/Reflector.php#L64
+//https://github.com/symfony/dependency-injection/blob/006f585b01f51188a8b30be06df64d1a489d5dec/LazyProxy/ProxyHelper.php
 
 final class Reflection
 {
