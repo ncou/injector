@@ -4,18 +4,11 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Container\NotFoundExceptionInterface;
-use Chiron\Injector\Exception\CannotResolveException;
-use Chiron\Injector\Test\Container\SimpleContainer as Container;
+use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Chiron\Injector\Injector;
-use Chiron\Injector\MissingRequiredArgumentException;
-use Chiron\Injector\Test\Support\ColorInterface;
-use Chiron\Injector\Test\Support\EngineInterface;
-use Chiron\Injector\Test\Support\EngineMarkTwo;
-use Chiron\Injector\Test\Support\StaticMethod;
-use Chiron\Injector\Exception\NotCallableException;
+use Chiron\Injector\Test\Container\SimpleContainer as Container;
 use Chiron\Injector\Test\Fixtures\TypedClass;
+use PHPUnit\Framework\TestCase;
 
 class InjectorBuildTest extends TestCase
 {
@@ -41,9 +34,9 @@ class InjectorBuildTest extends TestCase
     public function testAutowireTypecastingAndValidatingWrongString(): void
     {
         //$expected = "Unable to resolve 'string' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
-        $expected = 'Cannot resolve a value for parameter "$string" in callable "Chiron\Injector\Test\Fixtures\TypedClass::__construct"';
+        $expected = 'Argument 1 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "string", "NULL" passed.';
         $this->expectExceptionMessage($expected);
-        $this->expectException(CannotResolveException::class);
+        $this->expectException(InvalidParameterTypeException::class);
 
         $container = new Container();
         $injector = new Injector($container);
@@ -61,35 +54,11 @@ class InjectorBuildTest extends TestCase
         $this->assertInstanceOf(TypedClass::class, $object);
     }
 
-    public function testAutowireTypecastingAndValidatingWrongArray(): void
-    {
-        //$expected = "Unable to resolve 'array' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
-        $expected = 'Cannot resolve a value for parameter "$array" in callable "Chiron\Injector\Test\Fixtures\TypedClass::__construct"';
-        $this->expectExceptionMessage($expected);
-        $this->expectException(CannotResolveException::class);
-
-        $container = new Container();
-        $injector = new Injector($container);
-
-        $object = $injector->build(
-            TypedClass::class,
-            [
-                'string' => '',
-                'int'    => 123,
-                'float'  => 1.00,
-                'bool'   => true,
-                'array'  => 'not array',
-            ]
-        );
-
-        $this->assertInstanceOf(TypedClass::class, $object);
-    }
-
     public function testAutowireTypecastingAndValidatingWrongInt(): void
     {
-        $expected = 'Cannot resolve a value for parameter "$int" in callable "Chiron\Injector\Test\Fixtures\TypedClass::__construct"'; //"Unable to resolve 'int' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Argument 2 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "int", "string" passed.'; //"Unable to resolve 'int' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
         $this->expectExceptionMessage($expected);
-        $this->expectException(CannotResolveException::class);
+        $this->expectException(InvalidParameterTypeException::class);
 
         $container = new Container();
         $injector = new Injector($container);
@@ -109,9 +78,9 @@ class InjectorBuildTest extends TestCase
 
     public function testAutowireTypecastingAndValidatingWrongFloat(): void
     {
-        $expected = 'Cannot resolve a value for parameter "$float" in callable "Chiron\Injector\Test\Fixtures\TypedClass::__construct"'; //"Unable to resolve 'float' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Argument 3 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "float", "string" passed.'; //"Unable to resolve 'float' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
         $this->expectExceptionMessage($expected);
-        $this->expectException(CannotResolveException::class);
+        $this->expectException(InvalidParameterTypeException::class);
 
         $container = new Container();
         $injector = new Injector($container);
@@ -131,9 +100,9 @@ class InjectorBuildTest extends TestCase
 
     public function testAutowireTypecastingAndValidatingWrongBool(): void
     {
-        $expected = 'Cannot resolve a value for parameter "$bool" in callable "Chiron\Injector\Test\Fixtures\TypedClass::__construct"'; //"Unable to resolve 'bool' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Argument 4 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "bool", "string" passed.'; //"Unable to resolve 'bool' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
         $this->expectExceptionMessage($expected);
-        $this->expectException(CannotResolveException::class);
+        $this->expectException(InvalidParameterTypeException::class);
 
         $container = new Container();
         $injector = new Injector($container);
@@ -151,4 +120,27 @@ class InjectorBuildTest extends TestCase
         $this->assertInstanceOf(TypedClass::class, $object);
     }
 
+    public function testAutowireTypecastingAndValidatingWrongArray(): void
+    {
+        //$expected = "Unable to resolve 'array' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Argument 5 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "array", "string" passed.';
+        $this->expectExceptionMessage($expected);
+        $this->expectException(InvalidParameterTypeException::class);
+
+        $container = new Container();
+        $injector = new Injector($container);
+
+        $object = $injector->build(
+            TypedClass::class,
+            [
+                'string' => '',
+                'int'    => 123,
+                'float'  => 1.00,
+                'bool'   => true,
+                'array'  => 'not array',
+            ]
+        );
+
+        $this->assertInstanceOf(TypedClass::class, $object);
+    }
 }

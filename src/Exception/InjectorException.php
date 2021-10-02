@@ -6,5 +6,4 @@ namespace Chiron\Injector\Exception;
 
 class InjectorException extends \Exception
 {
-
 }

@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Container\NotFoundExceptionInterface;
 use Chiron\Injector\Exception\CannotResolveException;
-use Chiron\Injector\Test\Container\SimpleContainer as Container;
+use Chiron\Injector\Exception\NotCallableException;
 use Chiron\Injector\Injector;
-use Chiron\Injector\MissingRequiredArgumentException;
+use Chiron\Injector\Test\Container\SimpleContainer as Container;
 use Chiron\Injector\Test\Support\ColorInterface;
 use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineMarkTwo;
 use Chiron\Injector\Test\Support\StaticMethod;
-use Chiron\Injector\Exception\NotCallableException;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\NotFoundExceptionInterface;
 
 class InjectorTest extends TestCase
 {
@@ -102,5 +101,4 @@ class InjectorTest extends TestCase
 
         $container->resolveArguments(new \ReflectionMethod(UnionTypes::class, 'example'));
     }*/
-
 }

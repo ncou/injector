@@ -1,15 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Chiron\Injector\Traits;
 
 use Chiron\Injector\Exception\NotCallableException;
-use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-
-use ReflectionMethod;
 use ReflectionException;
-
-use RuntimeException;
+use ReflectionMethod;
 
 //https://github.com/PHP-DI/Invoker/blob/a812493e87bb4ed413584e4a98208f54c43475ec/src/CallableResolver.php
 //https://github.com/yiisoft/yii-event/blob/master/src/CallableFactory.php#L55
@@ -20,12 +18,19 @@ trait CallableResolverTrait
      * Resolve the given callable into a real PHP callable.
      *
      * @param callable|string|array $callable
+     *
      * @return callable Real PHP callable.
      *
      * @throws NotCallableException
      */
     protected function resolveCallable($callable): callable
     {
+        // The callable is a string in the form 'class::method'
+        if (is_string($callable) && strpos($callable, '::') !== false) {
+            $callable = explode('::', $callable, 2);
+        }
+
+        // Try to resolve the callable using the container.
         $resolved = $this->resolveFromContainer($callable);
 
         if (! is_callable($resolved)) {
@@ -37,42 +42,22 @@ trait CallableResolverTrait
 
     /**
      * @param callable|string|array $callable
-     * @return mixed could be a callable, an array[object, string $method] in case the methode is private or protected, or unrecognized stuff
+     *
+     * @return callable|mixed Could be a callable, an array[object, string $method] in case the methode is private or protected, or unrecognized stuff
      *
      * @throws NotCallableException
+     * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      */
     private function resolveFromContainer($callable)
     {
-        // The callable is a string in the service:method notation.
-        /*
-        if (is_string($callable) && substr_count($callable, ':') === 1) {
-            $callable = explode(':', $callable, 2);
-        }*/
-
-        // The callable is a string in the class::method notation.
-        if (is_string($callable) && strpos($callable, '::') !== false) {
-            $callable = explode('::', $callable, 2);
-        }
-
-        // TODO : réfléchir si on garde ce bout de code, ce shortcut ne semble pas servir à grand chose et un is_callable est utilisé plus tard...
-        // Shortcut for a very common use case
-        if ($callable instanceof \Closure) {
+        // If it's already a callable there is nothing to do.
+        // TODO : remplacer par un simple is_callable lorsqu'on sera passé en php8 !!!
+        if ($this->isCallable($callable)) {
             return $callable;
         }
 
-        // We cannot just check is_callable but have to use reflection because a non-static method
-        // can still be called statically in PHP but we don't want that. This is deprecated in PHP 7 !!!
-        // and an E_DEPRECATED warning is throwed when the callable is invoked. So we could simplify this with PHP 8.
-        $isStaticCallToNonStaticMethod = false;
-        // If it's already a callable there is nothing to do
-        if (is_callable($callable)) {
-            $isStaticCallToNonStaticMethod = $this->isStaticCallToNonStaticMethod($callable);
-            if (! $isStaticCallToNonStaticMethod) {
-                return $callable;
-            }
-        }
-
         // TODO : attention ca risque de pas fonctionner si on passe le nom d'une fonction globale du style 'nom_de_ma_fonction_globale' car ce n'est pas une entrée du container !!!
+        // TODO : à virer !!!
         // The callable is a container entry name
         if (is_string($callable)) {
             try {
@@ -81,6 +66,7 @@ trait CallableResolverTrait
                 if ($this->container->has($callable)) {
                     throw $e;
                 }
+
                 throw NotCallableException::fromInvalidCallable($callable);
             }
         }
@@ -91,30 +77,42 @@ trait CallableResolverTrait
             try {
                 // Replace the container entry name by the actual object
                 $callable[0] = $this->container->get($callable[0]);
+
                 return $callable;
             } catch (NotFoundExceptionInterface $e) {
                 if ($this->container->has($callable[0])) {
                     throw $e;
                 }
-                if ($isStaticCallToNonStaticMethod) {
-                    throw new NotCallableException(sprintf(
-                        'Cannot call %s::%s() because %s() is not a static method and "%s" is not a container entry',
-                        $callable[0],
-                        $callable[1],
-                        $callable[1],
-                        $callable[0]
-                    ));
-                }
+
                 throw new NotCallableException(sprintf(
-                    'Cannot call %s on %s because it is not a class nor a valid container entry',
+                    'Cannot call %s() on %s because it is not a class nor a valid container entry.',
                     $callable[1],
                     $callable[0]
                 ));
             }
         }
 
-        // Unrecognized stuff
+        // Unrecognized stuff, we let it fail later
         return $callable;
+    }
+
+    // TODO : Fonction à supprimer une fois qu'on sera passé en PHP8
+    private function isCallable($callable): bool
+    {
+        // Shortcut for a very common use case
+        if ($callable instanceof Closure) {
+            return true;
+        }
+
+        // If it's already a callable there is nothing to do
+        if (is_callable($callable)) {
+            // TODO with PHP 8 that should not be necessary to check this anymore
+            if (! $this->isStaticCallToNonStaticMethod($callable)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -122,13 +120,18 @@ trait CallableResolverTrait
      *
      * @param mixed $callable
      *
-     * @return bool
+     * @throws ReflectionException
      */
-    // TODO : bout de code à déplacer dans la classe Reflector::class ou ReflectionUtils::class
+    // TODO : Fonction à supprimer une fois qu'on sera passé en PHP8
     private function isStaticCallToNonStaticMethod($callable): bool
     {
         if (is_array($callable) && is_string($callable[0])) {
-            list($class, $method) = $callable;
+            [$class, $method] = $callable;
+
+            if (! method_exists($class, $method)) {
+                return false;
+            }
+
             $reflection = new ReflectionMethod($class, $method);
 
             return ! $reflection->isStatic();

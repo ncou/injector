@@ -12,7 +12,7 @@ class TypedClass
         float $float,
         bool $bool,
         array $array = [],
-        string $pong = null
+        ?string $pong = null
     ) {
     }
 }

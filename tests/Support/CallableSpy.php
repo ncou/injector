@@ -1,6 +1,8 @@
 <?php
-namespace Chiron\Injector\Test\Support;
 
+declare(strict_types=1);
+
+namespace Chiron\Injector\Test\Support;
 
 /**
  * Mock a callable and spies being called.
@@ -22,7 +24,7 @@ class CallableSpy
     /**
      * @var array
      */
-    private $parameters = array();
+    private $parameters = [];
 
     public static function mock($callable)
     {

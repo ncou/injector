@@ -4,31 +4,13 @@ declare(strict_types=1);
 
 namespace Chiron\Injector;
 
+use Chiron\Injector\Traits\CallableResolverTrait;
+use Chiron\Injector\Traits\ParameterResolverTrait;
+use Chiron\Injector\Traits\ReflectorTrait;
+use InvalidArgumentException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use Chiron\Injector\Exception\CannotResolveException;
-use Chiron\Injector\Exception\InjectorException;
-use Chiron\Injector\Exception\NotCallableException;
-use Chiron\Injector\ReflectionCallable;
-use Chiron\Injector\ReflectionCallable2;
-use Chiron\Injector\Reflection;
-use Chiron\Injector\Resolver;
-use ReflectionObject;
-use ReflectionClass;
-use ReflectionFunction;
-use ReflectionParameter;
-use Closure;
-use RuntimeException;
-use ReflectionFunctionAbstract;
-use InvalidArgumentException;
-use Throwable;
-use ReflectionMethod;
 use ReflectionException;
-use Chiron\Injector\Traits\ParameterResolverTrait;
-use Chiron\Injector\Traits\CallableResolverTrait;
-use Chiron\Injector\Traits\ReflectorTrait;
-
 
 //https://github.com/laravel/framework/blob/8.x/src/Illuminate/Container/BoundMethod.php
 
@@ -83,13 +65,12 @@ final class Injector implements InvokerInterface, FactoryInterface
         // TODO : améliorer ce bout de code, on fait 2 fois un new class, alors qu'on pourrait en faire qu'un !!! https://github.com/illuminate/container/blob/master/Container.php#L815
         // TODO : il faudrait que si il n'y a pas de constructeur la méthode resolveArguments retourne d'office un tableau vide, comme ca on peut faire un seul return avec un new $className qui aura en paramétre un tableau vide si le constructeur n'existe pas !!!! => https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ParameterResolver.php#L45
 
-        // Throw an exception if the class is not found or is not instantiable.
+        // Throw an exception if the class is not found or not instantiable.
         $reflection = $this->reflectClass($class);
         $constructor = $reflection->getConstructor();
 
         if ($constructor !== null) {
-            // Try to match the constructor parameters with the given parameters.
-            $arguments = $this->resolveParameters($constructor, $parameters);
+            $arguments = $this->resolveDependencies($constructor, $parameters);
             $instance = $reflection->newInstanceArgs($arguments);
         } else {
             $instance = $reflection->newInstance();
@@ -120,7 +101,9 @@ final class Injector implements InvokerInterface, FactoryInterface
      * @param callable $callback callable to be invoked.
      * @param array $params The array of parameters for the function.
      * This can be either a list of parameters, or an associative array representing named function parameters.
+     *
      * @return mixed the callback return value.
+     *
      * @throws MissingRequiredArgumentException  if required argument is missing.
      * @throws ContainerExceptionInterface if a dependency cannot be resolved or if a dependency cannot be fulfilled.
      * @throws \ReflectionException
@@ -132,12 +115,10 @@ final class Injector implements InvokerInterface, FactoryInterface
         $callable = $this->resolveCallable($callback);
         $reflection = $this->reflectCallable($callable);
         // Try to match the callable parameters with the given parameters.
-        $arguments = $this->resolveParameters($reflection, $parameters);
+        $arguments = $this->resolveDependencies($reflection, $parameters);
 
         return $reflection->invokeArgs($arguments);
     }
-
-
 
     /**
      * Invoke a callable and inject its dependencies.
@@ -230,6 +211,7 @@ final class Injector implements InvokerInterface, FactoryInterface
      * by the DI container as the second argument.
      *
      * @param string $class name of the class to be created.
+     *
      * @psalm-param class-string $class
      *
      * @param array $arguments The array of the function arguments.
@@ -287,6 +269,7 @@ final class Injector implements InvokerInterface, FactoryInterface
 
     /**
      * @param string $type
+     *
      * @return bool
      */
     /*

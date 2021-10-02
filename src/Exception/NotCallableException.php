@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Exception;
 
+use function count;
+use function get_class;
+use function gettype;
+use function is_array;
+use function is_object;
+use function is_string;
+use function strlen;
+
 class NotCallableException extends InjectorException
 {
     /**
@@ -30,7 +38,7 @@ class NotCallableException extends InjectorException
 
     private static function getErrorMessage($value): string
     {
-        if (\is_string($value)) {
+        if (is_string($value)) {
             if (strpos($value, '::') !== false) {
                 $value = explode('::', $value, 2);
             } elseif (substr_count($value, ':') === 1) {
@@ -39,22 +47,23 @@ class NotCallableException extends InjectorException
                 return sprintf('Function "%s" does not exist.', $value);
             }
         }
-        if (\is_object($value)) {
+        if (is_object($value)) {
             $availableMethods = self::getClassMethodsWithoutMagicMethods($value);
             $alternativeMsg = $availableMethods ? sprintf(' or use one of the available methods: "%s"', implode('", "', $availableMethods)) : '';
-            return sprintf('Controller class "%s" cannot be called without a method name. You need to implement "__invoke"%s.', \get_class($value), $alternativeMsg);
+
+            return sprintf('Controller class "%s" cannot be called without a method name. You need to implement "__invoke"%s.', get_class($value), $alternativeMsg);
         }
-        if (!\is_array($value)) {
-            return sprintf('Invalid type for controller given, expected string, array or object, got "%s".', \gettype($value));
+        if (! is_array($value)) {
+            return sprintf('Invalid type for controller given, expected string, array or object, got "%s".', gettype($value));
         }
-        if (!isset($value[0]) || !isset($value[1]) || 2 !== \count($value)) {
+        if (! isset($value[0]) || ! isset($value[1]) || count($value) !== 2) {
             return 'Invalid array callable, expected [controller, method].';
         }
-        list($controller, $method) = $value;
-        if (\is_string($controller) && !class_exists($controller)) {
+        [$controller, $method] = $value;
+        if (is_string($controller) && ! class_exists($controller)) {
             return sprintf('Class "%s" does not exist.', $controller);
         }
-        $className = \is_object($controller) ? \get_class($controller) : $controller;
+        $className = is_object($controller) ? get_class($controller) : $controller;
         if (method_exists($controller, $method)) {
             return sprintf('Method "%s" on class "%s" should be public and non-abstract.', $method, $className);
         }
@@ -63,16 +72,16 @@ class NotCallableException extends InjectorException
         $alternatives = [];
         foreach ($collection as $item) {
             $lev = levenshtein($method, $item);
-            if ($lev <= \strlen($method) / 3 || strpos($item, $method) !== false) {
+            if ($lev <= strlen($method) / 3 || strpos($item, $method) !== false) {
                 $alternatives[] = $item;
             }
         }
         asort($alternatives);
 
         $message = sprintf('Expected method "%s" on class "%s"', $method, $className);
-        if (\count($alternatives) > 0) {
+        if (count($alternatives) > 0) {
             $message .= sprintf(', did you mean "%s"?', implode('", "', $alternatives));
-        } elseif ((\count($collection) > 0)) {
+        } elseif ((count($collection) > 0)) {
             $message .= sprintf('. Available methods: "%s".', implode('", "', $collection));
         }
 
@@ -82,9 +91,9 @@ class NotCallableException extends InjectorException
     private static function getClassMethodsWithoutMagicMethods($classOrObject): array
     {
         $methods = get_class_methods($classOrObject);
+
         return array_filter($methods, function (string $method) {
-            return 0 !== strncmp($method, '__', 2);
+            return strncmp($method, '__', 2) !== 0;
         });
     }
-
 }

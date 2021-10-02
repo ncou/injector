@@ -5,24 +5,16 @@ declare(strict_types=1);
 namespace Chiron\Injector\Traits;
 
 use Chiron\Injector\Exception\CannotResolveException;
-use Chiron\Injector\Exception\InjectorException;
+use Chiron\Injector\ResolvingState;
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use ReflectionObject;
-use ReflectionClass;
-use ReflectionFunction;
-use ReflectionParameter;
-use Closure;
-use RuntimeException;
 use ReflectionFunctionAbstract;
-use InvalidArgumentException;
-use Throwable;
+use ReflectionNamedType;
+use ReflectionParameter;
 
-use ReflectionMethod;
-use ReflectionException;
-
-use Chiron\Injector\Reflection;
+// INTERSECTION :
+//https://github.com/nette/di/blob/ad12717ec0493ff2a4f6bd7c06e98f4c1a05fb4c/src/DI/Resolver.php#L532
+// UNION : Remove the "xxx|null" part
+//https://github.com/nette/utils/blob/master/src/Utils/ReflectionType.php#L48
 
 //https://github.com/nette/di/blob/f3608c4d8684c880c2af0cf7b4d2b7143bc459b0/src/DI/Resolver.php#L531
 //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
@@ -55,144 +47,104 @@ use Chiron\Injector\Reflection;
 // TODO : renommer en DependenciesResolverTrait ou DependencyResolverTrait ???? ou ArgumentResolverTrait
 trait ParameterResolverTrait
 {
+    // TODO : getTypeHint
+    //https://github.com/symfony/dependency-injection/blob/006f585b01f51188a8b30be06df64d1a489d5dec/LazyProxy/ProxyHelper.php
+
+
     //https://github.com/researchgate/injektor/blob/master/src/rg/injektor/DependencyInjectionContainer.php#L768
     // TODO : il faudrait pas changer le type ReflectionFunctionAbstract en ReflectionMethod (car on ne va pas vraiment dait de reflection sur une fonction globale) ????
     // TODO : renommer en resolveDependencies() ???
     //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
     // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
-    protected function resolveParameters(ReflectionFunctionAbstract $reflection = null, array $parameters = []): array
+    protected function resolveDependencies(?ReflectionFunctionAbstract $reflection = null, array $arguments = []): array
     {
-        $arguments = [];
+        // VARIADIC : https://github.com/yiisoft/definitions/blob/ebf3091722cf9c4e71672571010e25fe81566084/src/Infrastructure/DefinitionExtractor.php#L85
+        //https://github.com/yiisoft/injector/blob/3bd38d4ebc70f39050e4ae056ac10c40c4975cb1/src/Injector.php#L176
+        //https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L487
+        // https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Container.php#L985
+
+        // ReflectionIntersectionType : https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L531
+        // ReflectionUnionType : https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L590
+
+        $state = new ResolvingState($reflection, $arguments);
 
         foreach ($reflection->getParameters() as $parameter) {
+            // Try to resolve parameters
+            $resolved = $this->resolveParameter($parameter, $arguments, $state);
 
-            try {
-
-
-                //Information we need to know about argument in order to resolve it's value
-                $name = $parameter->getName();
-                $class = $parameter->getClass();
-
-
-
-            } catch (ReflectionException $e) {
-
-                //throw new CannotResolveException($parameter);
-
-                // TODO : Remplacer le $fil et $line de l'exception avec le fichier php de la classe qui a levé l'exception ca sera plus clair dans le debuger lorsqu'on affichera le "snipet" du code.
-
-                //Possibly invalid class definition or syntax error
-                throw new InjectorException(sprintf('Invalid value for parameter %s', Reflection::toString($parameter)), $e->getCode(), $e);
-                //throw new InvocationException("Unresolvable dependency resolving [$parameter] in class {$parameter->getDeclaringClass()->getName()}", $e->getCode());
-                //throw new InvocationException("Unresolvable dependency resolving [$parameter] in function " . $parameter->getDeclaringClass()->getName() . '::' . $parameter->getDeclaringFunction()->getName(), $e->getCode());
-            }
-
-            if (isset($parameters[$name]) && is_object($parameters[$name])) {
-                //Supplied by user as object
-                $arguments[] = $parameters[$name];
+            if ($resolved === true) {
                 continue;
             }
-            //No declared type or scalar type or array
-            if (empty($class)) {
-                //Provided from outside
-                if (array_key_exists($name, $parameters)) {
-                    //Make sure it's properly typed
-                    $this->assertType($parameter, $parameters[$name]);
-                    $arguments[] = $parameters[$name];
-                    continue;
-                }
-                if ($parameter->isDefaultValueAvailable()) {
-                    //Default value
-                    //$arguments[] = $parameter->getDefaultValue();
-                    $arguments[] = Reflection::getParameterDefaultValue($parameter); // TODO : attention car cette méthode peut lever un ReflectionException !!! qui ne sera donc pas catché, il faudrait le catcher et convertir en CannotResolveException pour faire un throw !!!!
-                    continue;
-                }
-                //Unable to resolve scalar argument value
-                throw new CannotResolveException($parameter);
-            }
 
-            try {
-                //Requesting for contextual dependency
-                $arguments[] = $this->container->get($class->getName());
-                continue;
-            } catch (ContainerExceptionInterface $e) {
-                if ($parameter->isOptional()) {
-                    //This is optional dependency, skip
-                    $arguments[] = null;
-                    continue;
-                }
-                throw $e; // TODO : il faudrait plutot renvoyer une CannotResolveException ou une DependencyException du genre : https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ObjectCreator.php#L147
-            }
+            //throw new MissingRequiredArgumentException($reflection, $parameter->getName());
+            throw new CannotResolveException($parameter);
         }
 
         // TODO : lever une exception si le parametre n'est pas optionnel et qu'on n'a pas réussi à le résoudre !!!! https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L177
 
-        return $arguments;
+        // TODO : ajouter ici une méthode qui vérifie les type de paramétres checkTypes => https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L128
+
+        //return $arguments; // TODO : renommer les variables $arguments et $value en $results et $result ????
+
+        return $state->getResolvedValues();
     }
 
-    /**
-     * Assert that given value are matched parameter type.
-     *
-     * @param \ReflectionParameter        $parameter
-     * @param mixed                       $value
-     *
-     * @throws CannotResolveException
-     */
-    //https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L267
-    //https://github.com/symfony/dependency-injection/blob/5.3/Tests/Compiler/CheckTypeDeclarationsPassTest.php
-    private function assertType(ReflectionParameter $parameter, $value): void
+    private function resolveParameter(ReflectionParameter $parameter, array $parameters = [], ResolvingState $state): bool
     {
-        // TODO : il faudrait plutot lever l'exception si le $value est à null et que le paramétre ne supporte pas $parameter->allowsNull()
-        if ($value === null) {
-            if (!$parameter->isOptional() &&
-                !($parameter->isDefaultValueAvailable() && $parameter->getDefaultValue() === null)
-            ) {
-                throw new CannotResolveException($parameter);
+        $isVariadic = $parameter->isVariadic();
+        $hasType = $parameter->hasType();
+        // TODO : méthode à virer !!!!
+        $state->disablePushTrailingArguments($isVariadic && $hasType); // TODO : voir pourquoi on a besoin du hasType = true !!!
+
+        $name = $parameter->getName();
+        // Try to resolve parameter by name
+        if ($state->resolveParameterByName($name, $isVariadic)) {
+            return true;
+        }
+
+        // Class name is null if there is no typehint or in case of scalar or in case of Union/Intersection typehint (php8.0/8.1).
+        $class = $this->getParameterClassName($parameter);
+        if ($class !== null) {
+            if ($state->resolveParameterByClass($class, $isVariadic)) {
+                return true;
             }
-            return;
+
+            // We can't resolve a variadic parameter with a classname using the container 'foobar(\StdClass ...$myClasses)'
+            if ($isVariadic) {
+                return false; // TODO : not pas forcément il peut il y avoir une valeur par défaut je pense !!!! 'foobar(?\StdClass ...$myClasses)' ou 'foobar(?\StdClass ...$myClasses = null)'
+            }
+
+            // https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L692
+            // https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L545
+            try {
+                //Requesting for contextual dependency
+                $value = $this->container->get($class);
+                // Faire le catch plutot sur le Container\Psr\NotFoundExceptionInterface::class
+            } catch (ContainerExceptionInterface $e) {
+                // TODO : Utipliser plutot le default value : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Container.php#L994
+                if ($parameter->isOptional()) {
+                    //This is optional dependency, skip.
+                    $value = null;
+                }
+
+                throw $e;
+                // TODO : il faudrait plutot renvoyer une CannotResolveException ou une DependencyException du genre : https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ObjectCreator.php#L147
+            }
+        } elseif ($parameter->isDefaultValueAvailable()) {
+            $value = $parameter->getDefaultValue();
+        } elseif (! $parameter->isOptional()) {
+            //$funcName = $reflection->getName();
+            //throw new InvalidConfigException("Missing required parameter \"$name\" when calling \"$funcName\".");
+
+            //throw new CannotResolveException($parameter);
+
+            //$message = "Unable to resolve dependency [{$parameter}] in class {$parameter->getDeclaringClass()->getName()}";
+            return false;
         }
 
+        $state->addResolvedValue($value);
 
-        /*
-        // TODO : utiliser ce bout de code !!!!
-        if ($value === null && $parameter->allowsNull()) {
-            return;
-        }
-        */
-
-
-
-        // TODO : attention il me semble que en php8 le getType retournera le pint d'interrogation en cas de nullable, exemple ?int ou ?string et par défaut si on a rien précisé il retourne "mixed" et pas null (ce point est quand même à vérifier !!!)
-        // The reflectionType could be null if there is no parameter typehint.
-        $reflectionType = $parameter->getType();
-
-        // Handle the case when the parameter has no typehint.
-        if (! $reflectionType instanceof \ReflectionNamedType) {
-            return;
-        }
-
-
-
-
-
-        // TODO : on devrait aussi vérifier que la classe est identique, et vérifier aussi le type string pour que cette méthode soit plus générique. Vérifier ce qui se passe si on fait pas cette vérification c'est à dire appeller une fonction avec des paramétres qui n'ont pas le bon typehint !!!!
-        $type = $reflectionType->getName();
-
-        // TODO : gérer le cas ou le typehint est 'self' avec ce bout de code par exemple. Ou alors voir si on a une méthode identique dans la classe d'utilitaires Reflection !!!!
-        /*
-        if ('self' === $type) {
-            $type = $parameter->getDeclaringClass()->getName();
-        }*/
-
-        if ($type == 'array' && !is_array($value)) {
-            throw new CannotResolveException($parameter); // TODO : lever plutot une 'InvalidParameterTypeException::class' =>     https://github.com/symfony/dependency-injection/blob/999cfcf6400502bbc145b2bf36935770770ba6ca/Exception/InvalidParameterTypeException.php#L20
-        }
-        if (($type == 'int' || $type == 'float') && !is_numeric($value)) {
-            throw new CannotResolveException($parameter);
-        }
-        if ($type == 'bool' && !is_bool($value) && !is_numeric($value)) {
-            throw new CannotResolveException($parameter);
-        }
+        return true;
     }
 
     /**
@@ -201,16 +153,17 @@ trait ParameterResolverTrait
      * From Reflector::getParameterClassName() in Illuminate\Support.
      *
      * @param  \ReflectionParameter  $parameter
+     *
      * @return string|null
      */
     // https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Util.php#L52
-    /*
-    public static function getParameterClassName($parameter)
+    // TODO : attention il faudrait pouvoir gérer le cas du ReflectionUnionType qui a un "nom de classe + null" par exemple foobar(StdClass|null $myClass) il faudrait retourner juste le nom de la classe et s'assurer que la valeur de la reflection "isOptional" est bien à true dans ce type de cas !!!!
+    private function getParameterClassName(ReflectionParameter $parameter): ?string
     {
         $type = $parameter->getType();
 
         if (! $type instanceof ReflectionNamedType || $type->isBuiltin()) {
-            return;
+            return null;
         }
 
         $name = $type->getName();
@@ -226,5 +179,5 @@ trait ParameterResolverTrait
         }
 
         return $name;
-    }*/
+    }
 }

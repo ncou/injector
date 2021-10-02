@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test\Container;
 
+use Chiron\Injector\Test\Container\Exception\NotFoundException;
 use Closure;
 use Psr\Container\ContainerInterface;
 use Throwable;
-use Chiron\Injector\Test\Container\Exception\NotFoundException;
+
 use function array_key_exists;
 
 final class SimpleContainer implements ContainerInterface
@@ -18,8 +19,8 @@ final class SimpleContainer implements ContainerInterface
     private $factory;
 
     /**
-     * @param array $definitions
-     * @param Closure|null $factory Should be closure that works like ContainerInterface::get(string $id): mixed
+     * @param array        $definitions
+     * @param Closure|null $factory     Should be closure that works like ContainerInterface::get(string $id): mixed
      */
     public function __construct(array $definitions = [], ?Closure $factory = null)
     {
@@ -31,9 +32,10 @@ final class SimpleContainer implements ContainerInterface
 
     public function get($id)
     {
-        if (!array_key_exists($id, $this->definitions)) {
+        if (! array_key_exists($id, $this->definitions)) {
             $this->definitions[$id] = ($this->factory)($id);
         }
+
         return $this->definitions[$id];
     }
 
@@ -44,6 +46,7 @@ final class SimpleContainer implements ContainerInterface
         }
         try {
             $this->get($id);
+
             return true;
         } catch (Throwable $e) {
             return false;

@@ -4,30 +4,16 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Traits;
 
-use Chiron\Injector\Exception\CannotResolveException;
 use Chiron\Injector\Exception\InjectorException;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use ReflectionObject;
-use ReflectionClass;
-use ReflectionFunction;
-use ReflectionParameter;
 use Closure;
-use RuntimeException;
-use ReflectionFunctionAbstract;
-use InvalidArgumentException;
-use Throwable;
-
-use ReflectionMethod;
+use ReflectionClass;
 use ReflectionException;
-use Reflector;
-
-use Chiron\Injector\Reflection;
+use ReflectionFunction;
 
 // TODO : renommer en InteractWithReflectionTrait
 trait ReflectorTrait
 {
+    // https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L210
     protected function reflectClass(string $class): ReflectionClass
     {
         // TODO : Lever une exception si la classe n'existe pas, et à ce moment là le try/catch n'est plus nécessaire !!!!
@@ -41,7 +27,7 @@ trait ReflectorTrait
         } catch (ReflectionException $e) {
             // TODO : créer un ClassNotFoundException::class
             // TODO : utiliser la classe NotInstantiableException et mettre un message plus générique du genre : Class %s is not instanciable - $e->getMessage()
-            throw new InjectorException(sprintf('Class "%s" does not exist.',$class), $e->getCode(), $e);
+            throw new InjectorException(sprintf('Class "%s" does not exist.', $class), $e->getCode(), $e);
         }
 
         // TODO : ajouter une gestion des exceptions circulaires.
@@ -55,8 +41,26 @@ trait ReflectorTrait
         if (! $reflection->isInstantiable()) {
             // https://github.com/illuminate/container/blob/master/Container.php#L1079
             // TODO : créer un ClassNotInstantiableException::class
-            throw new InjectorException(sprintf('Class "%s" is not instantiable.',$class));
+            throw new InjectorException(sprintf('Class "%s" is not instantiable.', $class));
         }
+
+/*
+        if (!class_exists($entity)) {
+            throw new ServiceCreationException(sprintf("Class '%s' not found.", $entity));
+        } elseif ((new ReflectionClass($entity))->isAbstract()) {
+            throw new ServiceCreationException(sprintf('Class %s is abstract.', $entity));
+        } elseif (($rm = (new ReflectionClass($entity))->getConstructor()) !== null && !$rm->isPublic()) {
+            throw new ServiceCreationException(sprintf('Class %s has %s constructor.', $entity, $rm->isProtected() ? 'protected' : 'private'));
+        } elseif ($constructor = (new ReflectionClass($entity))->getConstructor()) {
+            $arguments = self::autowireArguments($constructor, $arguments, $getter);
+            $this->addDependency($constructor);
+        } elseif ($arguments) {
+            throw new ServiceCreationException(sprintf(
+                'Unable to pass arguments, class %s has no constructor.',
+                $entity,
+            ));
+        }
+*/
 
         return $reflection;
     }

@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Chiron\Injector\Test\Support;
 
 /**
@@ -9,7 +12,6 @@ class EngineMarkTwo implements EngineInterface
     public const NAME = 'Mark Two';
 
     private $number;
-
 
     /**
      * @return string
