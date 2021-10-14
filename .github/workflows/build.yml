@@ -62,3 +62,8 @@ jobs:
 
       - name: Run tests with phpunit
         run: vendor/bin/phpunit --colors=always
+
+      - name: Send code coverage report to Codecov.io
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
