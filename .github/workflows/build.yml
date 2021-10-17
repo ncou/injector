@@ -66,11 +66,11 @@ jobs:
         run: vendor/bin/phpunit --colors=always
 
       - name: Run tests with phpunit and coverage on Linux php 8.0
-        if: matrix.os == 'ubuntu-latest' && matrix.php-version == '8.0'
+        if: matrix.os == 'ubuntu-latest' && matrix.php == '8.0'
         run: vendor/bin/phpunit --coverage-clover=coverage.clover
 
       - name: Send code coverage report to Codecov.io
-        if: matrix.os == 'ubuntu-latest' && matrix.php-version == '8.0'
+        if: matrix.os == 'ubuntu-latest' && matrix.php == '8.0'
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
