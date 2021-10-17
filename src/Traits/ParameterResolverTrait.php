@@ -146,6 +146,7 @@ trait ParameterResolverTrait
 
     /**
      * Get the class name of the given parameter's type, if possible.
+     * Union/Intersection type hint that cannot be inferred unambiguously so we don't return a classname.
      *
      * From Reflector::getParameterClassName() in Illuminate\Support.
      *

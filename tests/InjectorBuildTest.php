@@ -8,10 +8,22 @@ use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Chiron\Injector\Injector;
 use Chiron\Injector\Test\Container\SimpleContainer as Container;
 use Chiron\Injector\Test\Fixtures\TypedClass;
+use Chiron\Injector\Test\Fixtures\NoConstructorClass;
 use PHPUnit\Framework\TestCase;
 
 class InjectorBuildTest extends TestCase
 {
+    public function testNoConstructorClass(): void
+    {
+        $container = new Container();
+        $injector = new Injector($container);
+
+        $object = $injector->build(
+            NoConstructorClass::class);
+
+        $this->assertInstanceOf(NoConstructorClass::class, $object);
+    }
+
     public function testAutowireOptionalString(): void
     {
         $container = new Container();
