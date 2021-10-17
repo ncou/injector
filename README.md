@@ -2,8 +2,8 @@
 
 This is the catchphrase: what does this project do and how is it unique?
 
-[![Build Status](https://github.com/yiisoft/injector/workflows/build/badge.svg)](https://github.com/yiisoft/injector/actions)
-[![Static Analysis](https://github.com/yiisoft/injector/workflows/static%20analysis/badge.svg)](https://github.com/yiisoft/injector/actions?query=workflow%3A%22static+analysis%22)
+[![Build Status](https://github.com/ncou/injector/workflows/build/badge.svg)](https://github.com/ncou/injector/actions)
+[![Static Analysis](https://github.com/ncou/injector/workflows/static%20analysis/badge.svg)](https://github.com/ncou/injector/actions?query=workflow%3A%22static+analysis%22)
 
 [![CodeCov](https://codecov.io/gh/ncou/injector/branch/master/graph/badge.svg)](https://codecov.io/gh/ncou/injector)
 
