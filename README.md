@@ -2,9 +2,18 @@
 
 This is the catchphrase: what does this project do and how is it unique?
 
-[![Build Status](https://img.shields.io/travis/com/PHP-DI/PHP-DI/master.svg?style=flat-square)](https://travis-ci.com/PHP-DI/PHP-DI)
-[![Latest Version](https://img.shields.io/github/release/PHP-DI/PHP-DI.svg?style=flat-square)](https://packagist.org/packages/PHP-DI/php-di)
-[![Total Downloads](https://img.shields.io/packagist/dt/PHP-DI/PHP-DI.svg?style=flat-square)](https://packagist.org/packages/PHP-DI/php-di)
+[![Build Status](https://github.com/yiisoft/injector/workflows/build/badge.svg)](https://github.com/yiisoft/injector/actions)
+[![Static Analysis](https://github.com/yiisoft/injector/workflows/static%20analysis/badge.svg)](https://github.com/yiisoft/injector/actions?query=workflow%3A%22static+analysis%22)
+
+[![CodeCov](https://codecov.io/gh/ncou/injector/branch/master/graph/badge.svg)](https://codecov.io/gh/ncou/injector)
+
+[![Latest Stable Version](https://poser.pugx.org/chiron/injector/v/stable.png)](https://packagist.org/packages/chiron/injector)
+[![Total Downloads](https://img.shields.io/packagist/dt/chiron/injector.svg?style=flat-square)](https://packagist.org/packages/chiron/injector/stats)
+[![Monthly Downloads](https://img.shields.io/packagist/dm/chiron/injector.svg?style=flat-square)](https://packagist.org/packages/chiron/injector/stats)
+[![Total Downloads](https://img.shields.io/packagist/dt/chiron/injector.svg?style=flat-square)](https://packagist.org/packages/chiron/injector)
+
+[![Latest Version](https://img.shields.io/github/v/tag/ncou/injector.svg?style=flat-square)](https://packagist.org/packages/chiron/injector)
+[![Total Downloads](https://img.shields.io/packagist/dt/chiron/injector.svg?style=flat-square)](https://packagist.org/packages/chiron/injector)
 
 Here is an additional quick introduction, if necessary.
 

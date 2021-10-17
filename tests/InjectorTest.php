@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
-use Chiron\Injector\Exception\CannotResolveException;
+use Chiron\Injector\Exception\MissingRequiredParameterException;
 use Chiron\Injector\Exception\NotCallableException;
 use Chiron\Injector\Injector;
 use Chiron\Injector\Test\Container\SimpleContainer as Container;
@@ -41,7 +41,7 @@ class InjectorTest extends TestCase
     // TODO : améliorer les tests !!!! https://github.com/PHP-DI/Invoker/blob/master/tests/InvokerTest.php#L363
     public function testInvokeWithNonStaticMethod(): void
     {
-        $this->expectExceptionMessage('Cannot call Chiron\Injector\Test\Support\StaticMethod::getNameNonStatic() because getNameNonStatic() is not a static method and "Chiron\Injector\Test\Support\StaticMethod" is not a container entry');
+        $this->expectExceptionMessage('Cannot call getNameNonStatic() on Chiron\Injector\Test\Support\StaticMethod because it is not a valid container entry.');
         $this->expectException(NotCallableException::class);
 
         $container = new Container();
@@ -53,8 +53,8 @@ class InjectorTest extends TestCase
     public function testInvokeMissingRequiredParameter(): void
     {
         // TODO : améliorer le message d'erreur dans le cas d'une closure. Eventuellement afficher le nom du fichier + ligne, ca sera plus simple à debugger !!!!
-        $this->expectExceptionMessage('Cannot resolve a value for parameter "$two" in callable "Chiron\Injector\Test\InjectorTest::Chiron\Injector\Test\{closure}');
-        $this->expectException(CannotResolveException::class);
+        $this->expectExceptionMessage('Missing required value for parameter "$two" when calling "Chiron\Injector\Test\InjectorTest::Chiron\Injector\Test\{closure}');
+        $this->expectException(MissingRequiredParameterException::class);
 
         $container = new Container([
             EngineInterface::class => new EngineMarkTwo(),
@@ -71,9 +71,9 @@ class InjectorTest extends TestCase
 
     public function testInvokeMissingRequiredClassParameter(): void
     {
-        // TODO : à terme in ne faudrait pas renvoyer une container exception mais directement une CannotResolveException
-        $this->expectExceptionMessage('No definition or class found for "Chiron\Injector\Test\Support\ColorInterface');
-        $this->expectException(NotFoundExceptionInterface::class);
+        // TODO : améliorer le message d'erreur dans le cas d'une closure. Eventuellement afficher le nom du fichier + ligne, ca sera plus simple à debugger !!!!
+        $this->expectExceptionMessage('Missing required value for parameter "$color" when calling "Chiron\Injector\Test\InjectorTest::Chiron\Injector\Test\{closure}');
+        $this->expectException(MissingRequiredParameterException::class);
 
         $container = new Container([
             EngineInterface::class => new EngineMarkTwo(),

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Traits;
 
-use Chiron\Injector\Exception\CannotResolveException;
+use Chiron\Injector\Exception\MissingRequiredParameterException;
 use Chiron\Injector\ResolvingState;
-use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -56,7 +56,13 @@ trait ParameterResolverTrait
     // TODO : renommer en resolveDependencies() ???
     //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
     // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
-    protected function resolveDependencies(?ReflectionFunctionAbstract $reflection = null, array $arguments = []): array
+    /**
+     * @throws ContainerExceptionInterface Error while retrieving the entry from container.
+     * @throws MissingRequiredParameterException
+     * @throws InjectorException Error if the $arguments array contains Non-object argument not named explicitly.
+     * @throws InvalidParameterTypeException Error if the resolved dependency has not the right type hint.
+     */
+    protected function resolveDependencies(ReflectionFunctionAbstract $reflection, array $arguments = []): array
     {
         // VARIADIC : https://github.com/yiisoft/definitions/blob/ebf3091722cf9c4e71672571010e25fe81566084/src/Infrastructure/DefinitionExtractor.php#L85
         //https://github.com/yiisoft/injector/blob/3bd38d4ebc70f39050e4ae056ac10c40c4975cb1/src/Injector.php#L176
@@ -69,34 +75,31 @@ trait ParameterResolverTrait
         $state = new ResolvingState($reflection, $arguments);
 
         foreach ($reflection->getParameters() as $parameter) {
-            // Try to resolve parameters
+            // Try to resolve parameters using arguments array.
             $resolved = $this->resolveParameter($parameter, $arguments, $state);
 
             if ($resolved === true) {
                 continue;
             }
 
-            //throw new MissingRequiredArgumentException($reflection, $parameter->getName());
-            throw new CannotResolveException($parameter);
+            // Unable to resolve dependency.
+            throw new MissingRequiredParameterException($parameter);
+            // TODO : renommer la classe en DependencyException par exemple : https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ObjectCreator.php#L147
         }
 
         // TODO : lever une exception si le parametre n'est pas optionnel et qu'on n'a pas réussi à le résoudre !!!! https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L177
 
-        // TODO : ajouter ici une méthode qui vérifie les type de paramétres checkTypes => https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L128
-
-        //return $arguments; // TODO : renommer les variables $arguments et $value en $results et $result ????
-
         return $state->getResolvedValues();
     }
 
+    /**
+     * @throws ContainerExceptionInterface Error while retrieving the entry from container.
+     */
     private function resolveParameter(ReflectionParameter $parameter, array $parameters = [], ResolvingState $state): bool
     {
-        $isVariadic = $parameter->isVariadic();
-        $hasType = $parameter->hasType();
-        // TODO : méthode à virer !!!!
-        $state->disablePushTrailingArguments($isVariadic && $hasType); // TODO : voir pourquoi on a besoin du hasType = true !!!
-
         $name = $parameter->getName();
+        $isVariadic = $parameter->isVariadic();
+
         // Try to resolve parameter by name
         if ($state->resolveParameterByName($name, $isVariadic)) {
             return true;
@@ -111,34 +114,28 @@ trait ParameterResolverTrait
 
             // We can't resolve a variadic parameter with a classname using the container 'foobar(\StdClass ...$myClasses)'
             if ($isVariadic) {
-                return false; // TODO : not pas forcément il peut il y avoir une valeur par défaut je pense !!!! 'foobar(?\StdClass ...$myClasses)' ou 'foobar(?\StdClass ...$myClasses = null)'
+                return false; // TODO : non pas forcément il peut il y avoir une valeur par défaut je pense !!!! 'foobar(?\StdClass ...$myClasses)' ou 'foobar(?\StdClass ...$myClasses = null)'
             }
 
             // https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L692
             // https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L545
             try {
+                //https://github.com/yiisoft/yii-event/blob/master/src/CallableFactory.php#L71
                 //Requesting for contextual dependency
-                $value = $this->container->get($class);
-                // Faire le catch plutot sur le Container\Psr\NotFoundExceptionInterface::class
-            } catch (ContainerExceptionInterface $e) {
-                // TODO : Utipliser plutot le default value : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Container.php#L994
-                if ($parameter->isOptional()) {
-                    //This is optional dependency, skip.
-                    $value = null;
+                $value = $this->container->get($class); // TODO : eventuellement faire un : if $container->has(XXXX) { $container->get(XXX) } plutot que de faire un try/catch !!!
+            } catch (NotFoundExceptionInterface $e) {
+                // TODO : Utiliser plutot le default value : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/Container.php#L994
+                // TODO : optimiser le code car on fait deux fois la vérification sur isOptional dans cette méthode !!!
+                if (! $parameter->isOptional()) {
+                    return false;
                 }
 
-                throw $e;
-                // TODO : il faudrait plutot renvoyer une CannotResolveException ou une DependencyException du genre : https://github.com/PHP-DI/PHP-DI/blob/78278800b18e7c5582fd4d4e629715f5eebbfcc0/src/Definition/Resolver/ObjectCreator.php#L147
+                //This is an optional class dependency, skip value.
+                $value = null;
             }
         } elseif ($parameter->isDefaultValueAvailable()) {
             $value = $parameter->getDefaultValue();
         } elseif (! $parameter->isOptional()) {
-            //$funcName = $reflection->getName();
-            //throw new InvalidConfigException("Missing required parameter \"$name\" when calling \"$funcName\".");
-
-            //throw new CannotResolveException($parameter);
-
-            //$message = "Unable to resolve dependency [{$parameter}] in class {$parameter->getDeclaringClass()->getName()}";
             return false;
         }
 

@@ -12,17 +12,20 @@ use ReflectionMethod;
 //https://github.com/PHP-DI/Invoker/blob/a812493e87bb4ed413584e4a98208f54c43475ec/src/CallableResolver.php
 //https://github.com/yiisoft/yii-event/blob/master/src/CallableFactory.php#L55
 
+// TODO : ajouter dans la phpdoc de cette classe qu'il faut que la variable de classe $this->container soit alimentée !!!
 trait CallableResolverTrait
 {
     /**
      * Resolve the given callable into a real PHP callable.
      *
-     * @param callable|string|array $callable
+     * @param callable|mixed $callable
      *
      * @return callable Real PHP callable.
      *
      * @throws NotCallableException
+     * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      */
+    // TODO : regrouper les 2 méthode resolveCallable + resolveFromContainer en une seul méthode !!!
     protected function resolveCallable($callable): callable
     {
         // The callable is a string in the form 'class::method'
@@ -43,7 +46,7 @@ trait CallableResolverTrait
     /**
      * @param callable|string|array $callable
      *
-     * @return callable|mixed Could be a callable, an array[object, string $method] in case the methode is private or protected, or unrecognized stuff
+     * @return callable|mixed Could be a callable, an array[object, string $method] in case the method is private or protected, or unrecognized stuff
      *
      * @throws NotCallableException
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
@@ -56,36 +59,17 @@ trait CallableResolverTrait
             return $callable;
         }
 
-        // TODO : attention ca risque de pas fonctionner si on passe le nom d'une fonction globale du style 'nom_de_ma_fonction_globale' car ce n'est pas une entrée du container !!!
-        // TODO : à virer !!!
-        // The callable is a container entry name
-        if (is_string($callable)) {
-            try {
-                return $this->container->get($callable);
-            } catch (NotFoundExceptionInterface $e) {
-                if ($this->container->has($callable)) {
-                    throw $e;
-                }
-
-                throw NotCallableException::fromInvalidCallable($callable);
-            }
-        }
-
         // The callable is an array whose first item is a container entry name
         // e.g. ['some-container-entry', 'methodToCall']
         if (is_array($callable) && is_string($callable[0])) {
             try {
                 // Replace the container entry name by the actual object
-                $callable[0] = $this->container->get($callable[0]);
+                $callable[0] = $this->container->get($callable[0]); // TODO : eventuellement faire un : if $container->has(XXXX) { $container->get(XXX) } plutot que de faire un try/catch !!!
 
                 return $callable;
             } catch (NotFoundExceptionInterface $e) {
-                if ($this->container->has($callable[0])) {
-                    throw $e;
-                }
-
                 throw new NotCallableException(sprintf(
-                    'Cannot call %s() on %s because it is not a class nor a valid container entry.',
+                    'Cannot call %s() on %s because it is not a valid container entry.',
                     $callable[1],
                     $callable[0]
                 ));

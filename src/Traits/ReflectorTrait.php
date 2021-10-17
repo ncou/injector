@@ -37,7 +37,7 @@ trait ReflectorTrait
         // https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L510
         // TODO : gérer un message d'erreur différent si on a un constructeur privé ou protected ??? https://github.com/nette/di/blob/f3608c4d8684c880c2af0cf7b4d2b7143bc459b0/src/DI/Resolver.php#L207
         // TODO : sortir ce test du isInstanciable et le reporter aprés cette méthode car on souhaite ici refléter une class et pas forcément ajouter de la logique métier dans cette fonction !!!!
-        // Not instantiable in case of class Abstract/Trait/Interface or with a private constructor.
+        // Not instantiable in case of class Abstract/Trait/Interface or with a private/protected constructor.
         if (! $reflection->isInstantiable()) {
             // https://github.com/illuminate/container/blob/master/Container.php#L1079
             // TODO : créer un ClassNotInstantiableException::class

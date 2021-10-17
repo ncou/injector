@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chiron\Injector;
 
+use Chiron\Injector\Exception\InjectorException;
 use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Generator;
 use InvalidArgumentException;
@@ -14,6 +15,7 @@ use ReflectionType;
 use ReflectionUnionType;
 use ReflectionParameter;
 
+// TODO : renommer en InjectorResolvingState::class ???
 final class ResolvingState
 {
     private $reflection;
@@ -28,9 +30,6 @@ final class ResolvingState
      */
     private $namedArguments = [];
 
-    /** @var bool */
-    private $shouldPushTrailingArguments;
-
     /**
      * @var array<mixed>
      */
@@ -44,16 +43,7 @@ final class ResolvingState
     public function __construct(ReflectionFunctionAbstract $reflection, array $arguments)
     {
         $this->reflection = $reflection;
-        $this->shouldPushTrailingArguments = ! $reflection->isInternal();
         $this->sortArguments($arguments);
-    }
-
-    /**
-     * @param bool $condition If true then trailing arguments will not be passed.
-     */
-    public function disablePushTrailingArguments(bool $condition): void
-    {
-        $this->shouldPushTrailingArguments = $this->shouldPushTrailingArguments && ! $condition;
     }
 
     public function resolveParameterByName(string $name, bool $variadic): bool
@@ -120,16 +110,13 @@ final class ResolvingState
         $this->resolvedValues[] = &$value;
     }
 
+    /**
+     * @throws InvalidParameterTypeException When a parameter is not compatible with the declared type.
+     */
     public function getResolvedValues(): array
     {
-        // Throw an exception if the typehint is not respected.
-        $this->checkTypeDeclarations($this->reflection, $this->resolvedValues);
-
-/*
-        return $this->shouldPushTrailingArguments
-            ? array_merge($this->resolvedValues, $this->numericArguments)
-            : $this->resolvedValues;
-*/
+        // Raise an exception if the typehint is not respected.
+        $this->checkParametersTypes($this->reflection, $this->resolvedValues);
 
         return $this->resolvedValues;
     }
@@ -137,14 +124,20 @@ final class ResolvingState
     /**
      * @param array $arguments
      *
-     * @throws InvalidArgumentException
+     * @throws InjectorException
      */
     private function sortArguments(array $arguments): void
     {
         foreach ($arguments as $key => &$value) {
             if (is_int($key)) {
                 if (! is_object($value)) {
-                    throw new InvalidArgumentException($this->reflection, (string) $key); // TODO : créer l'exception qui va bien !
+                    //'Injector expect an associative array except for object items.'
+                    //protected const EXCEPTION_MESSAGE = 'Invalid argument "%s" when calling "%s"%s. Non-object arguments should be named explicitly when passed.';
+                    //throw new InvalidArgumentException($this->reflection, (string) $key);
+                    //https://github.com/yiisoft/injector/blob/3df9b504ef721e192dac06d812b5c5b9f8df4b42/src/InvalidArgumentException.php#L7
+
+                    // We expect an associative array for the non-object values.
+                    throw new InjectorException('Invalid arguments array. Non-object argument should be named explicitly when passed.');
                 }
                 $this->numericArguments[] = &$value;
             } else {
@@ -153,8 +146,11 @@ final class ResolvingState
         }
     }
 
-    // TODO : renommer en checkArgumentTypes
-    private function checkTypeDeclarations(ReflectionFunctionAbstract $reflectionFunction, array $values): void
+    /**
+     * @throws InvalidParameterTypeException When a parameter is not compatible with the declared type.
+     */
+    // TODO : renommer en assertParameterTypeMatch() ????
+    private function checkParametersTypes(ReflectionFunctionAbstract $reflectionFunction, array $values): void
     {
         $reflectionParameters = $reflectionFunction->getParameters();
         $checksCount = min($reflectionFunction->getNumberOfParameters(), count($values));
@@ -177,10 +173,11 @@ final class ResolvingState
     }
 
     /**
-     * @throws InvalidParameterTypeException When a parameter is not compatible with the declared type
+     * @throws InvalidParameterTypeException When a parameter is not compatible with the declared type.
      */
     // https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L161
     // TODO : à finir de coder !!!!
+    // TODO : renommer en assertType()
     private function checkType($value, ReflectionParameter $parameter, ?ReflectionType $reflectionType = null): void
     {
         $reflectionType = $reflectionType ?? $parameter->getType();
@@ -195,6 +192,7 @@ final class ResolvingState
                 }
             }
 
+            // TODO : rendre le code plus propre en stockant dans l'exception le type et en ajoutant un getType() plutot que de bidouiller en stockant le type dans le code de l'exception.
             throw new InvalidParameterTypeException($e->getCode(), $parameter);
         }
 
@@ -282,8 +280,6 @@ final class ResolvingState
         }
 */
 
-        //throw new InvalidParameterTypeException($this->currentId, \is_object($value) ? $class : get_debug_type($value), $parameter);
-        //throw new CannotResolveException($parameter);
         throw new InvalidParameterTypeException(is_object($value) ? $class : (is_object($value) ? get_class($value) : gettype($value)), $parameter);
     }
 }

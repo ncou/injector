@@ -34,7 +34,7 @@ class InjectorBuildTest extends TestCase
     public function testAutowireTypecastingAndValidatingWrongString(): void
     {
         //$expected = "Unable to resolve 'string' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
-        $expected = 'Argument 1 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "string", "NULL" passed.';
+        $expected = 'Parameter 1 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "string", "NULL" passed.';
         $this->expectExceptionMessage($expected);
         $this->expectException(InvalidParameterTypeException::class);
 
@@ -56,7 +56,7 @@ class InjectorBuildTest extends TestCase
 
     public function testAutowireTypecastingAndValidatingWrongInt(): void
     {
-        $expected = 'Argument 2 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "int", "string" passed.'; //"Unable to resolve 'int' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Parameter 2 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "int", "string" passed.'; //"Unable to resolve 'int' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
         $this->expectExceptionMessage($expected);
         $this->expectException(InvalidParameterTypeException::class);
 
@@ -78,7 +78,7 @@ class InjectorBuildTest extends TestCase
 
     public function testAutowireTypecastingAndValidatingWrongFloat(): void
     {
-        $expected = 'Argument 3 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "float", "string" passed.'; //"Unable to resolve 'float' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Parameter 3 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "float", "string" passed.'; //"Unable to resolve 'float' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
         $this->expectExceptionMessage($expected);
         $this->expectException(InvalidParameterTypeException::class);
 
@@ -100,7 +100,7 @@ class InjectorBuildTest extends TestCase
 
     public function testAutowireTypecastingAndValidatingWrongBool(): void
     {
-        $expected = 'Argument 4 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "bool", "string" passed.'; //"Unable to resolve 'bool' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
+        $expected = 'Parameter 4 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "bool", "string" passed.'; //"Unable to resolve 'bool' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
         $this->expectExceptionMessage($expected);
         $this->expectException(InvalidParameterTypeException::class);
 
@@ -123,7 +123,7 @@ class InjectorBuildTest extends TestCase
     public function testAutowireTypecastingAndValidatingWrongArray(): void
     {
         //$expected = "Unable to resolve 'array' argument in 'Spiral\Tests\Core\Fixtures\TypedClass::__construct'";
-        $expected = 'Argument 5 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "array", "string" passed.';
+        $expected = 'Parameter 5 of "Chiron\Injector\Test\Fixtures\TypedClass::__construct()" accepts "array", "string" passed.';
         $this->expectExceptionMessage($expected);
         $this->expectException(InvalidParameterTypeException::class);
 

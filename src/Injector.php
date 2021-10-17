@@ -56,7 +56,7 @@ final class Injector implements InvokerInterface, FactoryInterface
     // TODO : renommer en buildClass() ????
     // TODO : améliorer le Circular exception avec le code : https://github.com/symfony/dependency-injection/blob/master/Container.php#L236
     // TODO : il n'y a pas un risque de références circulaires si on appel directement cette méthode qui est public.
-    // TODO : ajouter le typehint pour le retour de la fonction avec "make(): object"
+    // TODO : ajouter le typehint pour le retour de la fonction avec "build(): object"
     public function build(string $class, array $parameters = [])
     {
         // https://github.com/spiral/core/blob/02580dff7f1fcbc5e74caa1f78ea84c0e4c0d92e/src/Container.php#L534

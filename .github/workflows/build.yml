@@ -26,6 +26,8 @@ jobs:
           - "8.0"
           - "8.1"
 
+      fail-fast: false
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -64,6 +66,6 @@ jobs:
         run: vendor/bin/phpunit --colors=always
 
       - name: Send code coverage report to Codecov.io
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
