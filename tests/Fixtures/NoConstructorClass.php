@@ -6,6 +6,4 @@ namespace Chiron\Injector\Test\Fixtures;
 
 class NoConstructorClass
 {
-    public function __construct() {
-    }
 }
