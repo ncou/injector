@@ -70,7 +70,7 @@ $fn = function (Foo $a, Bar $b, int $c) { /* ... */ };
 
 // Arbitrary PSR-11 compatible object container
 $container = new \some\di\Container([
-    'Foo' => new Foo(), // will be used as $a
+    Foo::class => new Foo(), // will be used as $a
 ]);
 
 // Prepare the injector
