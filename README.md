@@ -107,7 +107,7 @@ composer phpstan
 
 ### Coding standards
 
-The code should follow the "chiron coding standard" [PHPCode_Sniffer](https://github.com/ncou/coding-standard). To use coding standards:
+The code should follow the [Chiron Coding Standard](https://github.com/ncou/coding-standard). To use coding standards:
 
 ```shell
 # detect violations of the defined coding standard.
@@ -121,5 +121,5 @@ composer fix-style
 
 ## License
 
-The Chiron Injector is free software. It is released under the terms of the BSD License.
+The Chiron Injector is free software. It is released under the terms of the MIT License.
 Please see [`LICENSE`](./LICENSE.md) for more information.
