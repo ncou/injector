@@ -107,7 +107,7 @@ composer phpstan
 
 ### Coding standards
 
-The code should follow the [Chiron Coding Standard](https://github.com/ncou/coding-standard). To use coding standards:
+The code should follow the [Chiron Coding Standard](https://github.com/ncou/coding-standard). To run coding standards:
 
 ```shell
 # detect violations of the defined coding standard.
