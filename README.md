@@ -66,11 +66,11 @@ arguments of other types.
 
 ```php
 // A function to call
-$fn = function (\App\Foo $a, \App\Bar $b, int $c) { /* ... */ };
+$fn = function (Foo $a, Bar $b, int $c) { /* ... */ };
 
 // Arbitrary PSR-11 compatible object container
 $container = new \some\di\Container([
-    'App\Foo' => new Foo(), // will be used as $a
+    'Foo' => new Foo(), // will be used as $a
 ]);
 
 // Prepare the injector
@@ -105,9 +105,9 @@ The code is statically analyzed with [Phpstan](https://phpstan.org/). To run sta
 composer phpstan
 ```
 
-### Coding standards
+### Coding standard
 
-The code should follow the [Chiron Coding Standard](https://github.com/ncou/coding-standard). To run coding standards:
+The code should follow the [Chiron Coding Standard](https://github.com/ncou/coding-standard). To apply coding standard:
 
 ```shell
 # detect violations of the defined coding standard.
