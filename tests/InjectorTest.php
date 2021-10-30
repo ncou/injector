@@ -88,6 +88,60 @@ class InjectorTest extends TestCase
         $injector->invoke($getEngineName);
     }
 
+    public function testInvokeEmptyArray(): void
+    {
+        $this->expectExceptionMessage(var_export([], true) . ' is neither a callable nor a valid container entry.');
+        $this->expectException(NotCallableException::class);
+
+        $container = new Container();
+
+        $result = (new Injector($container))->invoke([]);
+    }
+
+    // TODO : corriger le message d'erreur quand on est dans ce cas là car il a que des chaines vide pour contruire le message d'erreur et cela n'a pas de sens !!!!
+    public function testInvokeBadStringEmpty(): void
+    {
+        $this->expectExceptionMessage('Cannot call () on  because it is not a valid container entry.');
+        $this->expectException(NotCallableException::class);
+
+        $container = new Container();
+
+        $result = (new Injector($container))->invoke('::');
+    }
+
+    // TODO : corriger le message d'erreur quand on est dans ce cas là car il a que des chaines vide pour contruire le message d'erreur et cela n'a pas de sens !!!!
+    public function testInvokeBadStringPartialPrefix(): void
+    {
+        $this->expectExceptionMessage('Cannot call () on A because it is not a valid container entry.');
+        $this->expectException(NotCallableException::class);
+
+        $container = new Container();
+
+        $result = (new Injector($container))->invoke('A::');
+    }
+
+    // TODO : corriger le message d'erreur quand on est dans ce cas là car il a que des chaines vide pour contruire le message d'erreur et cela n'a pas de sens !!!!
+    public function testInvokeBadStringPartialSufix(): void
+    {
+        $this->expectExceptionMessage('Cannot call B() on  because it is not a valid container entry.');
+        $this->expectException(NotCallableException::class);
+
+        $container = new Container();
+
+        $result = (new Injector($container))->invoke('::B');
+    }
+
+    public function testInvokeUndefinedClassAndMethod(): void
+    {
+        $this->expectExceptionMessage('Cannot call undefined() on undefined because it is not a valid container entry.');
+        $this->expectException(NotCallableException::class);
+
+        $container = new Container();
+
+        $result = (new Injector($container))->invoke('undefined::undefined');
+    }
+
+
     /**
      * @requires PHP >= 8.0
      */

@@ -61,7 +61,7 @@ trait CallableResolverTrait
 
         // The callable is an array whose first item is a container entry name
         // e.g. ['some-container-entry', 'methodToCall']
-        if (is_array($callable) && is_string($callable[0])) {
+        if (is_array($callable) && isset($callable[0], $callable[1]) && is_string($callable[0])) {
             try {
                 // Replace the container entry name by the actual object
                 $callable[0] = $this->container->get($callable[0]); // TODO : eventuellement faire un : if $container->has(XXXX) { $container->get(XXX) } plutot que de faire un try/catch !!!
