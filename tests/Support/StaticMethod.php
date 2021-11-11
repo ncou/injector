@@ -23,4 +23,9 @@ class StaticMethod
     {
         return $this::NAME;
     }
+
+    private function getNamePrivateAndNonStatic(): string
+    {
+        return $this::NAME;
+    }
 }

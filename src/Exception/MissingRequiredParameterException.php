@@ -24,6 +24,7 @@ class MissingRequiredParameterException extends InjectorException
             $location = $function->getDeclaringClass()->getName() . '::' . $location;
         }
 
+        // TODO : faire un basename($function->getFileName()) ????
         $fileName = $function->getFileName();
         $line = $function->getStartLine();
 

@@ -12,77 +12,91 @@ use function is_object;
 use function is_string;
 use function strlen;
 
+//https://github.com/symfony/http-kernel/blob/6.0/Controller/ControllerResolver.php#36
+//https://github.com/symfony/http-kernel/blob/6.0/Controller/ControllerResolver.php#139
+//https://github.com/symfony/http-kernel/blob/6.0/Tests/Controller/ControllerResolverTest.php#L157
+//https://github.com/symfony/http-kernel/blob/6.0/Tests/Controller/ControllerResolverTest.php#L173
+
+// Passer la classe en final ????
+// TODO : renommer en InvalidCallableException::class ??? + changer le début du message d'erreur par "Invalid callable : xxxxxxxx"
 class NotCallableException extends InjectorException
 {
     /**
-     * @param mixed $value
-     *
-     * @return self
+     * @param mixed $callable Invalid callable value.
      */
-    public static function fromInvalidCallable($value): self
+    public function __construct($callable)
     {
-        if (is_object($value)) {
-            $message = sprintf('Instance of %s is not a callable.', get_class($value));
-        } elseif (is_array($value) && isset($value[0], $value[1])) {
-            $class = is_object($value[0]) ? get_class($value[0]) : $value[0];
-            $extra = method_exists($class, '__call') ? ' A __call() method exists but magic methods are not supported.' : '';
-            $message = sprintf('%s::%s() is not a callable.%s', $class, $value[1], $extra);
-        } else {
-            $message = var_export($value, true) . ' is neither a callable nor a valid container entry.';
-        }
+        $message = sprintf('Input is not callable : %s', self::getCallableError($callable));
 
-        return new self($message);
-
-        //return new self(self::getErrorMessage($value));
+        parent::__construct($message);
     }
 
-    private static function getErrorMessage($value): string
+    /**
+     * @param mixed $callable Invalid callable value.
+     *
+     * @return string Detailed error message.
+     */
+    private function getCallableError($callable): string
     {
-        if (is_string($value)) {
-            if (strpos($value, '::') !== false) {
-                $value = explode('::', $value, 2);
-            } elseif (substr_count($value, ':') === 1) {
-                $value = explode(':', $value, 2);
-            } else {
-                return sprintf('Function "%s" does not exist.', $value);
-            }
+        if (\is_string($callable)) {
+            return sprintf('"%s" is neither a php callable nor a valid container entry.', $callable);
         }
-        if (is_object($value)) {
-            $availableMethods = self::getClassMethodsWithoutMagicMethods($value);
+
+        if (\is_object($callable)) {
+            $availableMethods = self::getClassMethodsWithoutMagicMethods($callable);
             $alternativeMsg = $availableMethods ? sprintf(' or use one of the available methods: "%s"', implode('", "', $availableMethods)) : '';
 
-            return sprintf('Controller class "%s" cannot be called without a method name. You need to implement "__invoke"%s.', get_class($value), $alternativeMsg);
+            return sprintf('Controller class "%s" cannot be called without a method name. You need to implement "__invoke"%s.', get_debug_type($callable), $alternativeMsg);
         }
-        if (! is_array($value)) {
-            return sprintf('Invalid type for controller given, expected string, array or object, got "%s".', gettype($value));
+
+        if (!\is_array($callable)) {
+            return sprintf('Invalid type for controller given, expected string, array or object, got "%s".', get_debug_type($callable));
         }
-        if (! isset($value[0]) || ! isset($value[1]) || count($value) !== 2) {
+
+        if (!isset($callable[0]) || !isset($callable[1]) || 2 !== \count($callable)) {
             return 'Invalid array callable, expected [controller, method].';
         }
-        [$controller, $method] = $value;
-        if (is_string($controller) && ! class_exists($controller)) {
-            return sprintf('Class "%s" does not exist.', $controller);
+
+        [$controller, $method] = $callable;
+        if (\is_string($controller) && !class_exists($controller)) {
+            return sprintf('"%s" is neither a class name nor a valid container entry.', $controller);
         }
-        $className = is_object($controller) ? get_class($controller) : $controller;
+
+        $className = \is_object($controller) ? get_debug_type($controller) : $controller;
+
+        // TODO : attention je pense que si on passe en nom de méthode __call ou __callStatic la fonction method_exists ne fonctionnera pas bien !!!!
+        // TODO : attention depuis la version 7.4 les méthodes privées suite à un extends ne sont plus détectées par l'appel à method_exists !!!!
         if (method_exists($controller, $method)) {
-            return sprintf('Method "%s" on class "%s" should be public and non-abstract.', $method, $className);
+            $reflection = new \ReflectionMethod($controller, $method);
+
+            if ($reflection->isPublic() === false) {
+                return sprintf('Method "%s" on class "%s" should be public.', $method, $className);
+            }
+
+            if (\is_string($controller) && $reflection->isStatic() === false) {
+                return sprintf('Non-static method "%s" on class "%s" should not be called statically.', $method, $className);
+            }
         }
 
         $collection = self::getClassMethodsWithoutMagicMethods($controller);
         $alternatives = [];
         foreach ($collection as $item) {
             $lev = levenshtein($method, $item);
-            if ($lev <= strlen($method) / 3 || strpos($item, $method) !== false) {
+
+            if ($lev <= \strlen($method) / 3 || str_contains($item, $method)) {
                 $alternatives[] = $item;
             }
         }
         asort($alternatives);
 
         $message = sprintf('Expected method "%s" on class "%s"', $method, $className);
-        if (count($alternatives) > 0) {
+
+        if (\count($alternatives) > 0) {
             $message .= sprintf(', did you mean "%s"?', implode('", "', $alternatives));
-        } elseif ((count($collection) > 0)) {
+        } elseif (\count($collection) > 0) {
             $message .= sprintf('. Available methods: "%s".', implode('", "', $collection));
+        } else {
+            $message .= '.';
         }
 
         return $message;

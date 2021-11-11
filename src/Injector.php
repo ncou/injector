@@ -69,6 +69,7 @@ final class Injector implements InvokerInterface, FactoryInterface
         $reflection = $this->reflectClass($class);
         $constructor = $reflection->getConstructor();
 
+        // TODO : je pense qu'il faut aussi vérifier que le constructeur est public "if ($constructor && $constructor->isPublic()) {" : https://github.com/PHP-DI/PHP-DI/blob/b71d94b46e4505eed156b12882d1a0dd82f0530d/src/Definition/Source/ReflectionBasedAutowiring.php#L32
         if ($constructor !== null) {
             $arguments = $this->resolveDependencies($constructor, $parameters);
             $instance = $reflection->newInstanceArgs($arguments);
@@ -118,6 +119,33 @@ final class Injector implements InvokerInterface, FactoryInterface
         $arguments = $this->resolveDependencies($reflection, $parameters);
 
         return $reflection->invokeArgs($arguments);
+        //return call_user_func_array($callable, $arguments);
+
+/*
+        if ($reflection instanceof \ReflectionMethod) {
+            $scope = is_object($callable[0]) ? $callable[0] : null;
+            return $reflection->invokeArgs($scope, $arguments);
+        }
+
+        return $reflection->invokeArgs($arguments);
+        */
+    }
+
+    /**
+     * Resolve a pseudo callable in a valid php callable.
+     *
+     * @param mixed $callback callable to be resolved.
+     * @param array $params The array of parameters for the function.
+     * This can be either a list of parameters, or an associative array representing named function parameters.
+     *
+     * @return callable
+     *
+     * @throws Chiron\Injector\Exception\NotCallableException if $callable is not valid.
+     * @throws ContainerExceptionInterface if an entry (ex: classname) cannot be resolved.
+     */
+    public function resolve($callback): callable
+    {
+        return $this->resolveCallable($callback);
     }
 
     /**

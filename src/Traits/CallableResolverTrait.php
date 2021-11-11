@@ -22,33 +22,32 @@ trait CallableResolverTrait
      *
      * @return callable Real PHP callable.
      *
-     * @throws NotCallableException
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
+     * @throws NotCallableException
      */
-    // TODO : regrouper les 2 méthode resolveCallable + resolveFromContainer en une seul méthode !!!
+    // TODO : passer cette méthode en public ????
     protected function resolveCallable($callable): callable
     {
         // The callable is a string in the form 'class::method'
-        if (is_string($callable) && strpos($callable, '::') !== false) {
+        if (is_string($callable) && str_contains($callable, '::')) {
             $callable = explode('::', $callable, 2);
         }
 
-        // Try to resolve the callable using the container.
-        $resolved = $this->resolveFromContainer($callable);
+        $callable = $this->resolveFromContainer($callable);
 
-        if (! is_callable($resolved)) {
-            throw NotCallableException::fromInvalidCallable($callable);
+        // TODO : remplacer par un simple is_callable lorsqu'on sera passé en php8 !!!
+        if (! $this->isCallable($callable)) {
+            throw new NotCallableException($callable);
         }
 
-        return $resolved;
+        return $callable;
     }
 
     /**
-     * @param callable|string|array $callable
+     * @param callable|mixed $callable
      *
-     * @return callable|mixed Could be a callable, an array[object, string $method] in case the method is private or protected, or unrecognized stuff
+     * @return callable|mixed
      *
-     * @throws NotCallableException
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      */
     private function resolveFromContainer($callable)
@@ -59,20 +58,19 @@ trait CallableResolverTrait
             return $callable;
         }
 
-        // The callable is an array whose first item is a container entry name
-        // e.g. ['some-container-entry', 'methodToCall']
-        if (is_array($callable) && isset($callable[0], $callable[1]) && is_string($callable[0])) {
-            try {
-                // Replace the container entry name by the actual object
-                $callable[0] = $this->container->get($callable[0]); // TODO : eventuellement faire un : if $container->has(XXXX) { $container->get(XXX) } plutot que de faire un try/catch !!!
+        // The callable is a container entry name
+        if (is_string($callable)) {
+            if ($this->container->has($callable)) {
+                $callable = $this->container->get($callable);
+            }
+        }
 
-                return $callable;
-            } catch (NotFoundExceptionInterface $e) {
-                throw new NotCallableException(sprintf(
-                    'Cannot call %s() on %s because it is not a valid container entry.',
-                    $callable[1],
-                    $callable[0]
-                ));
+        // Try to resolve the callable using the container.
+        // e.g. ['some-container-entry', 'methodToCall']
+        if (is_array($callable) && isset($callable[0]) && is_string($callable[0])) {
+            if ($this->container->has($callable[0])) {
+                // Replace the container entry name by the actual object
+                $callable[0] = $this->container->get($callable[0]);
             }
         }
 

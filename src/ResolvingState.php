@@ -212,10 +212,13 @@ final class ResolvingState
         $type = $reflectionType->getName();
 
         // TODO : il faudrait pas gérer aussi le cas du 'parent' ????
+        // TODO : attention il se peut que le getDeclaringClass retourne null !!! donc le getName lévera une erreur !!!!
         if ($type === 'self') {
             $type = $parameter->getDeclaringClass()->getName();
         }
         // TODO : ---- END ----
+
+
 
         if ($value === null && $parameter->allowsNull()) {
             return;
@@ -223,63 +226,32 @@ final class ResolvingState
 
         if (is_object($value)) {
             $class = get_class($value);
-        } else {
-            $class = gettype($value);
-            $class = ['integer' => 'int', 'double' => 'float', 'boolean' => 'bool'][$class] ?? $class;
-        }
 
-        if ($type === $class) {
-            return;
-        }
-
-        if (is_a($class, $type, true)) {
-            return;
-        }
-
-/*
-        if (isset(static::$scalarTypes[$type]) && isset(static::$scalarTypes[$class])) {
-            return;
-        }
-*/
-
-        /*
-
-        if ('string' === $type && method_exists($class, '__toString')) {
-            return;
-        }
-
-        if ('callable' === $type && (\Closure::class === $class || method_exists($class, '__invoke'))) {
-            return;
-        }
-
-        if ('callable' === $type && \is_array($value) && isset($value[0]) && ($value[0] instanceof Reference || $value[0] instanceof Definition || \is_string($value[0]))) {
-            return;
-        }
-
-        if ('iterable' === $type && (\is_array($value) || 'array' === $class || is_subclass_of($class, \Traversable::class))) {
-            return;
-        }
-
-        if ('object' === $type && !isset(self::BUILTIN_TYPES[$class])) {
-            return;
-        }
-
-        if ('mixed' === $type) {
-            return;
-        }
-
-        if ('false' === $type) {
-            if (false === $value) {
+            if (is_a($class, $type, true)) {
                 return;
             }
-        } elseif ($reflectionType->isBuiltin()) {
+            // Function is_string() will not consider an object with __toString() as a string.
+            if ('string' === $type && method_exists($class, '__toString')) {
+                return;
+            }
+        }
+
+        if ($reflectionType->isBuiltin()) {
+            if ('mixed' === $type) {
+                return;
+            }
+            if ('false' === $type) {
+                if (false === $value) {
+                    return;
+                }
+            }
+            // Built-in : string/int/float/bool/array/object/callable/iterable/null.
             $checkFunction = sprintf('is_%s', $type);
             if ($checkFunction($value)) {
                 return;
             }
         }
-*/
 
-        throw new InvalidParameterTypeException(is_object($value) ? $class : (is_object($value) ? get_class($value) : gettype($value)), $parameter);
+        throw new InvalidParameterTypeException($parameter, $value);
     }
 }

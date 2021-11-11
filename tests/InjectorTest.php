@@ -17,7 +17,7 @@ use Psr\Container\NotFoundExceptionInterface;
 
 class InjectorTest extends TestCase
 {
-    public function testInvoke(): void
+    public function testInvokeClosure(): void
     {
         $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
 
@@ -25,29 +25,26 @@ class InjectorTest extends TestCase
             return $engine->getName();
         };
 
-        $engineName = (new Injector($container))->invoke($getEngineName);
+        $result = (new Injector($container))->invoke($getEngineName);
 
-        $this->assertSame('Mark Two', $engineName);
+        $this->assertSame('Mark Two', $result);
+    }
+
+    public function testInvokeFunction(): void
+    {
+        $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
+
+        $result = (new Injector($container))->invoke('strlen', ['str' => 'foobar']);
+
+        $this->assertSame(6, $result);
     }
 
     public function testInvokeWithStaticMethod(): void
     {
         $container = new Container();
-        $engineName = (new Injector($container))->invoke([StaticMethod::class, 'getName']);
+        $result = (new Injector($container))->invoke([StaticMethod::class, 'getName']);
 
-        $this->assertSame('Mark Two', $engineName);
-    }
-
-    // TODO : améliorer les tests !!!! https://github.com/PHP-DI/Invoker/blob/master/tests/InvokerTest.php#L363
-    public function testInvokeWithNonStaticMethod(): void
-    {
-        $this->expectExceptionMessage('Cannot call getNameNonStatic() on Chiron\Injector\Test\Support\StaticMethod because it is not a valid container entry.');
-        $this->expectException(NotCallableException::class);
-
-        $container = new Container();
-        $engineName = (new Injector($container))->invoke([StaticMethod::class, 'getNameNonStatic']);
-
-        $this->assertSame('Mark Two', $engineName);
+        $this->assertSame('Mark Two', $result);
     }
 
     public function testInvokeMissingRequiredParameter(): void
@@ -88,58 +85,108 @@ class InjectorTest extends TestCase
         $injector->invoke($getEngineName);
     }
 
-    public function testInvokeEmptyArray(): void
+    public function testInvokeWithNonStaticMethod(): void
     {
-        $this->expectExceptionMessage(var_export([], true) . ' is neither a callable nor a valid container entry.');
+        $this->expectExceptionMessage('Non-static method "getNameNonStatic" on class "Chiron\Injector\Test\Support\StaticMethod" should not be called statically.');
         $this->expectException(NotCallableException::class);
 
         $container = new Container();
 
-        $result = (new Injector($container))->invoke([]);
+        $result = (new Injector($container))->invoke([StaticMethod::class, 'getNameNonStatic']);
     }
 
-    // TODO : corriger le message d'erreur quand on est dans ce cas là car il a que des chaines vide pour contruire le message d'erreur et cela n'a pas de sens !!!!
-    public function testInvokeBadStringEmpty(): void
+    public function testInvokeWithPrivateAndNonStaticMethod(): void
     {
-        $this->expectExceptionMessage('Cannot call () on  because it is not a valid container entry.');
+        $this->expectExceptionMessage('Method "getNamePrivateAndNonStatic" on class "Chiron\Injector\Test\Support\StaticMethod" should be public.');
         $this->expectException(NotCallableException::class);
 
         $container = new Container();
 
-        $result = (new Injector($container))->invoke('::');
+        $result = (new Injector($container))->invoke([StaticMethod::class, 'getNamePrivateAndNonStatic']);
     }
 
-    // TODO : corriger le message d'erreur quand on est dans ce cas là car il a que des chaines vide pour contruire le message d'erreur et cela n'a pas de sens !!!!
-    public function testInvokeBadStringPartialPrefix(): void
+    /**
+     * @dataProvider getUndefinedControllers
+     */
+    public function testGetControllerWithUndefinedController($controller, $exceptionMessage = null)
     {
-        $this->expectExceptionMessage('Cannot call () on A because it is not a valid container entry.');
+        $this->expectExceptionMessage($exceptionMessage);
+        $this->expectException(NotCallableException::class);
+
+        $container = new Container([
+            ControllerTest::class => new ControllerTest(),
+            ControllerEmptyTest::class => new ControllerEmptyTest()
+        ]);
+
+        $result = (new Injector($container))->invoke($controller);
+    }
+
+    public function getUndefinedControllers()
+    {
+        $controller = new ControllerTest();
+        $controllerEmpty = new ControllerEmptyTest();
+
+        return [
+            ['', '"" is neither a php callable nor a valid container entry.'],
+            ['foo', '"foo" is neither a php callable nor a valid container entry.'],
+            ['oof::bar', '"oof" is neither a class name nor a valid container entry.'],
+            [['oof', 'bar'], '"oof" is neither a class name nor a valid container entry.'],
+            ['::', '"" is neither a class name nor a valid container entry.'],
+            ['::B', '"" is neither a class name nor a valid container entry.'],
+            ['A::', '"A" is neither a class name nor a valid container entry.'],
+            ['Chiron\Injector\Test\ControllerTest::staticsAction', 'Expected method "staticsAction" on class "Chiron\Injector\Test\ControllerTest", did you mean "staticAction"?'],
+            ['Chiron\Injector\Test\ControllerTest::privateAction', 'Method "privateAction" on class "Chiron\Injector\Test\ControllerTest" should be public.'],
+            ['Chiron\Injector\Test\ControllerTest::protectedAction', 'Method "protectedAction" on class "Chiron\Injector\Test\ControllerTest" should be public.'],
+            ['Chiron\Injector\Test\ControllerTest::undefinedAction', 'Expected method "undefinedAction" on class "Chiron\Injector\Test\ControllerTest". Available methods: "publicAction", "staticAction".'],
+            ['Chiron\Injector\Test\ControllerTest', 'Controller class "Chiron\Injector\Test\ControllerTest" cannot be called without a method name. You need to implement "__invoke" or use one of the available methods: "publicAction", "staticAction".'],
+            ['Chiron\Injector\Test\ControllerEmptyTest', 'Controller class "Chiron\Injector\Test\ControllerEmptyTest" cannot be called without a method name. You need to implement "__invoke".'],
+            ['Chiron\Injector\Test\ControllerEmptyTest::undefined', 'xpected method "undefined" on class "Chiron\Injector\Test\ControllerEmptyTest".'],
+            [[$controller, 'staticsAction'], 'Expected method "staticsAction" on class "Chiron\Injector\Test\ControllerTest", did you mean "staticAction"?'],
+            [[$controller, 'privateAction'], 'Method "privateAction" on class "Chiron\Injector\Test\ControllerTest" should be public.'],
+            [[$controller, 'protectedAction'], 'Method "protectedAction" on class "Chiron\Injector\Test\ControllerTest" should be public.'],
+            [[$controller, 'undefinedAction'], 'Expected method "undefinedAction" on class "Chiron\Injector\Test\ControllerTest". Available methods: "publicAction", "staticAction".'],
+            [$controller, 'Controller class "Chiron\Injector\Test\ControllerTest" cannot be called without a method name. You need to implement "__invoke" or use one of the available methods: "publicAction", "staticAction".'],
+            [$controllerEmpty, 'Controller class "Chiron\Injector\Test\ControllerEmptyTest" cannot be called without a method name. You need to implement "__invoke".'],
+            [[$controllerEmpty, 'undefined'], 'Expected method "undefined" on class "Chiron\Injector\Test\ControllerEmptyTest".'],
+            [['a' => 'foo', 'b' => 'bar'], 'Invalid array callable, expected [controller, method].'],
+            [['foobar'], 'Invalid array callable, expected [controller, method].'],
+            [[], 'Invalid array callable, expected [controller, method].'],
+            [null, 'Invalid type for controller given, expected string, array or object, got "null".'],
+        ];
+    }
+
+    /**
+     * @tes // TODO : à corriger !!!! + faire un test avec le method_exist voir le comportement !!!!
+     */
+    public function cannot_invoke_magic_method()
+    {
+        $this->expectExceptionMessage('Chiron\Injector\Test\InvokerTestMagicMethodFixture::foo() is not a callable. A __call() or __callStatic() method exists but magic methods are not supported.');
         $this->expectException(NotCallableException::class);
 
         $container = new Container();
-
-        $result = (new Injector($container))->invoke('A::');
+        $result = (new Injector($container))->invoke([new InvokerTestMagicMethodFixture, 'foo']);
     }
 
-    // TODO : corriger le message d'erreur quand on est dans ce cas là car il a que des chaines vide pour contruire le message d'erreur et cela n'a pas de sens !!!!
-    public function testInvokeBadStringPartialSufix(): void
+    /**
+     * @tes // TODO : à corriger !!!! + faire un test avec le method_exist voir le comportement !!!!
+     */
+    public function cannot_invoke_static_magic_method()
     {
-        $this->expectExceptionMessage('Cannot call B() on  because it is not a valid container entry.');
+        $this->expectExceptionMessage('Chiron\Injector\Test\InvokerTestStaticMagicMethodFixture::foo() is not a callable. A __call() or __callStatic() method exists but magic methods are not supported.');
         $this->expectException(NotCallableException::class);
 
         $container = new Container();
-
-        $result = (new Injector($container))->invoke('::B');
+        $result = (new Injector($container))->invoke([InvokerTestStaticMagicMethodFixture::class, 'foo']);
     }
 
-    public function testInvokeUndefinedClassAndMethod(): void
-    {
-        $this->expectExceptionMessage('Cannot call undefined() on undefined because it is not a valid container entry.');
-        $this->expectException(NotCallableException::class);
 
-        $container = new Container();
 
-        $result = (new Injector($container))->invoke('undefined::undefined');
-    }
+
+
+
+
+
+
 
 
     /**
@@ -155,4 +202,66 @@ class InjectorTest extends TestCase
 
         $container->resolveArguments(new \ReflectionMethod(UnionTypes::class, 'example'));
     }*/
+}
+
+
+class ControllerTest
+{
+    public function __construct()
+    {
+    }
+
+    public function __toString(): string
+    {
+        return '';
+    }
+
+    public function publicAction()
+    {
+    }
+
+    private function privateAction()
+    {
+    }
+
+    protected function protectedAction()
+    {
+    }
+
+    // TODO : à virer !!!!
+    public static function staticAction()
+    {
+    }
+}
+
+class ControllerEmptyTest
+{
+}
+
+class InvokerTestMagicMethodFixture
+{
+    /** @var bool */
+    public $wasCalled = false;
+    public function __call(string $name, array $args): string
+    {
+        if ($name === 'foo') {
+            $this->wasCalled = true;
+            return 'bar';
+        }
+        throw new \Exception('Unknown method');
+    }
+}
+
+class InvokerTestStaticMagicMethodFixture
+{
+    /** @var bool */
+    public static $wasCalled = false;
+    public static function __callStatic(string $name, array $args): string
+    {
+        if ($name === 'foo') {
+            static::$wasCalled = true;
+            return 'bar';
+        }
+        throw new \Exception('Unknown method');
+    }
 }

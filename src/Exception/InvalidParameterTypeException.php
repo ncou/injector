@@ -36,8 +36,11 @@ return sprintf('Closure at %s[%s:%s]',
 // TODO : ajouter le "... in file XXX at line XXX" dans le texte de l'exception.
 class InvalidParameterTypeException extends InjectorException
 {
-    public function __construct(string $type, ReflectionParameter $parameter)
+    // mixed $value
+    public function __construct(ReflectionParameter $parameter, $value)
     {
+        $type = is_object($value) ? get_class($value) : get_debug_type($value);
+
         $this->code = $type; // TODO : c'est pas beau améliorer ce code !!!!
 
         $acceptedType = $parameter->getType();

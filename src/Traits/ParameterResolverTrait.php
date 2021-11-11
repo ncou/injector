@@ -95,6 +95,7 @@ trait ParameterResolverTrait
     /**
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      */
+    //https://github.com/symfony/symfony/blob/24680199a8c3b7b3ffc2f0e50f96b77b62975b90/src/Symfony/Component/Serializer/Normalizer/AbstractNormalizer.php#L362
     private function resolveParameter(ReflectionParameter $parameter, array $parameters = [], ResolvingState $state): bool
     {
         $name = $parameter->getName();
@@ -117,6 +118,7 @@ trait ParameterResolverTrait
                 return false; // TODO : non pas forcément il peut il y avoir une valeur par défaut je pense !!!! 'foobar(?\StdClass ...$myClasses)' ou 'foobar(?\StdClass ...$myClasses = null)'
             }
 
+            // TODO : faire un container->has() au lieu du try/catch ????
             // https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/framework/di/Container.php#L692
             // https://github.com/nette/di/blob/3dd8ca66d4d64fed9815099928139539d9d8b3e3/src/DI/Resolver.php#L545
             try {
