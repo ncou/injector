@@ -75,13 +75,13 @@ trait ReflectorTrait
         $callable = Closure::fromCallable($callable);
         $reflection = new ReflectionFunction($callable);
 
-        // TODO : il faudrait surement lever une exception si $reflection->isUserDefined() est à faux, cela bloquera l'utilisation des méthodes __call et __callStatic qui sont compliquées à résoudre. Et parcontre le contre coup c'est que l'on va aussi interdire d'accéder aux fonctions natives PHP par exemple 'trim' ou 'str' si on le appelles de cette maniére cela va aussi lever l'exception !!! ou alors éventuellement utiliser de manuére conditionnelle l'instruction "function_exists(xxx)" pour gérer ce cas là !!!!
+        // TODO : il faudrait surement lever une exception si $reflection->isUserDefined() est à faux, cela bloquera l'utilisation des méthodes __call et __callStatic qui sont compliquées à résoudre. Et parcontre le contre coup c'est que l'on va aussi interdire d'accéder aux fonctions natives PHP par exemple 'trim' ou 'str' si on le appelles de cette maniére cela va aussi lever l'exception !!! ou alors éventuellement utiliser de manière conditionnelle l'instruction "function_exists(xxx)" pour gérer ce cas là !!!!
 
         return $reflection;
     }
 
 /*
-// TODO : attention cela plante avec l'utilisation des méthodes magiques __call et __callStatic !!!
+// TODO : attention cela plante avec l'utilisation des méthodes magiques __call et __callStatic !!! car la méthode "virtuelle" n'existe pas vraiment dans la classe !!!!
     protected function reflectCallable_OLD(callable $callable): \ReflectionFunctionAbstract
     {
         if (is_string($callable) && str_contains($callable, '::')) {

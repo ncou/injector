@@ -135,8 +135,6 @@ final class Injector implements InvokerInterface, FactoryInterface
      * Resolve a pseudo callable in a valid php callable.
      *
      * @param mixed $callback callable to be resolved.
-     * @param array $params The array of parameters for the function.
-     * This can be either a list of parameters, or an associative array representing named function parameters.
      *
      * @return callable
      *

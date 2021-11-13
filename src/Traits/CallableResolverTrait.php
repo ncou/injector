@@ -58,7 +58,7 @@ trait CallableResolverTrait
             return $callable;
         }
 
-        // The callable is a container entry name
+        // The callable is a container entry name.
         if (is_string($callable)) {
             if ($this->container->has($callable)) {
                 $callable = $this->container->get($callable);
@@ -74,7 +74,6 @@ trait CallableResolverTrait
             }
         }
 
-        // Unrecognized stuff, we let it fail later
         return $callable;
     }
 

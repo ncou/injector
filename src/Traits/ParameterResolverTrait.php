@@ -75,6 +75,7 @@ trait ParameterResolverTrait
         $state = new ResolvingState($reflection, $arguments);
 
         foreach ($reflection->getParameters() as $parameter) {
+
             // Try to resolve parameters using arguments array.
             $resolved = $this->resolveParameter($parameter, $arguments, $state);
 

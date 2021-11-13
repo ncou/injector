@@ -39,7 +39,7 @@ class InvalidParameterTypeException extends InjectorException
     // mixed $value
     public function __construct(ReflectionParameter $parameter, $value)
     {
-        $type = is_object($value) ? get_class($value) : get_debug_type($value);
+        $type = is_object($value) ? get_class($value) : get_debug_type($value); // TODO : à terme utiliser un $this->type = is_object.......
 
         $this->code = $type; // TODO : c'est pas beau améliorer ce code !!!!
 
@@ -58,6 +58,6 @@ class InvalidParameterTypeException extends InjectorException
         }
 */
 
-        parent::__construct(sprintf('Parameter %d of "%s()" accepts "%s", "%s" passed.', $parameter->getPosition() + 1, $functionName, $acceptedType, $type));
+        parent::__construct(sprintf('Parameter %d of "%s()" accepts "%s", "%s" passed.', $parameter->getPosition() + 1, $functionName, $acceptedType, $type)); // TODO : utiliser $this->type !!!!
     }
 }
