@@ -75,9 +75,8 @@ trait ParameterResolverTrait
         $state = new ResolvingState($reflection, $arguments);
 
         foreach ($reflection->getParameters() as $parameter) {
-
             // Try to resolve parameters using arguments array.
-            $resolved = $this->resolveParameter($parameter, $arguments, $state);
+            $resolved = $this->resolveParameter($parameter, $state);
 
             if ($resolved === true) {
                 continue;
@@ -97,7 +96,8 @@ trait ParameterResolverTrait
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      */
     //https://github.com/symfony/symfony/blob/24680199a8c3b7b3ffc2f0e50f96b77b62975b90/src/Symfony/Component/Serializer/Normalizer/AbstractNormalizer.php#L362
-    private function resolveParameter(ReflectionParameter $parameter, array $parameters = [], ResolvingState $state): bool
+    // TODO : virer le 2eme paramétre $parameters de cette méthode car il n'est pas utilisé !!!!
+    private function resolveParameter(ReflectionParameter $parameter, ResolvingState $state): bool
     {
         $name = $parameter->getName();
         $isVariadic = $parameter->isVariadic();
@@ -133,7 +133,7 @@ trait ParameterResolverTrait
                     return false;
                 }
 
-                //This is an optional class dependency, skip value.
+                // This is an optional class dependency, skip value.
                 $value = null;
             }
         } elseif ($parameter->isDefaultValueAvailable()) {

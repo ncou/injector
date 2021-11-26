@@ -78,6 +78,7 @@ class NotCallableException extends InjectorException
             }
         }
 
+        // TODO : améliorer l'algo de levenshtein ???? https://github.com/nette/utils/blob/a828903f85bb513e51ba664b44b61f20d812cf20/src/Utils/Helpers.php#L69
         $collection = self::getClassMethodsWithoutMagicMethods($controller);
         $alternatives = [];
         foreach ($collection as $item) {

@@ -35,8 +35,7 @@ trait CallableResolverTrait
 
         $callable = $this->resolveFromContainer($callable);
 
-        // TODO : remplacer par un simple is_callable lorsqu'on sera passé en php8 !!!
-        if (! $this->isCallable($callable)) {
+        if (! is_callable($callable)) {
             throw new NotCallableException($callable);
         }
 
@@ -53,8 +52,7 @@ trait CallableResolverTrait
     private function resolveFromContainer($callable)
     {
         // If it's already a callable there is nothing to do.
-        // TODO : remplacer par un simple is_callable lorsqu'on sera passé en php8 !!!
-        if ($this->isCallable($callable)) {
+        if (is_callable($callable)) {
             return $callable;
         }
 
@@ -75,49 +73,5 @@ trait CallableResolverTrait
         }
 
         return $callable;
-    }
-
-    // TODO : Fonction à supprimer une fois qu'on sera passé en PHP8
-    private function isCallable($callable): bool
-    {
-        // Shortcut for a very common use case
-        if ($callable instanceof Closure) {
-            return true;
-        }
-
-        // If it's already a callable there is nothing to do
-        if (is_callable($callable)) {
-            // TODO with PHP 8 that should not be necessary to check this anymore
-            if (! $this->isStaticCallToNonStaticMethod($callable)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Check if the callable represents a static call to a non-static method.
-     *
-     * @param mixed $callable
-     *
-     * @throws ReflectionException
-     */
-    // TODO : Fonction à supprimer une fois qu'on sera passé en PHP8
-    private function isStaticCallToNonStaticMethod($callable): bool
-    {
-        if (is_array($callable) && is_string($callable[0])) {
-            [$class, $method] = $callable;
-
-            if (! method_exists($class, $method)) {
-                return false;
-            }
-
-            $reflection = new ReflectionMethod($class, $method);
-
-            return ! $reflection->isStatic();
-        }
-
-        return false;
     }
 }

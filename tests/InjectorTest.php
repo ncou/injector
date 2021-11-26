@@ -34,7 +34,7 @@ class InjectorTest extends TestCase
     {
         $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
 
-        $result = (new Injector($container))->invoke('strlen', ['str' => 'foobar']);
+        $result = (new Injector($container))->invoke('strlen', ['string' => 'foobar']);
 
         $this->assertSame(6, $result);
     }

@@ -69,6 +69,7 @@ trait ReflectorTrait
     // https://github.com/Wandu/Reflection/blob/eca8daed402eb4706af6dd403879c88655f38b7d/src/ReflectionCallable.php#L76
     // https://github.com/eslym/php-router/blob/96e449b5869338d2b3c30eb3eeb99637c4349204/src/ReflectionCallable.php#L40
     // TODO : indiquer que le warp dans une closure permet aussi de faciliter l'invokation de la reflectionfunction en lui passant uniquement en paramétre les arguments.
+    //https://github.com/J7mbo/Auryn/blob/master/lib/Executable.php#L41
     protected function reflectCallable(callable $callable): ReflectionFunction
     {
         // Wrap the callable in a Closure to simplify the reflection code.

@@ -34,6 +34,7 @@ class MissingRequiredParameterException extends InjectorException
         }
 
         // TODO : faire plutot un parent::__construct(sprintf((string)static::EXCEPTION_MESSAGE, $parameter, $method, $fileAndLine));
+        // TODO : indiquer la position du paramétre dans le message d'erreur ????
         $this->message = sprintf('Missing required value for parameter "$%s" when calling "%s"%s.', $parameter->getName(), $location, $fileAndLine); // TODO : utiliser un protected const pour le message ou alors un private si on passe l'exception en final !!!!
     }
 }

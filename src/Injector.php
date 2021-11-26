@@ -111,6 +111,7 @@ final class Injector implements InvokerInterface, FactoryInterface
      */
     //$callback => callable|array|string
     // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif (code à utiliser que dans le cadre d'un invoke() ca n'a pas de sens de ne pas avoir de tableau associatif pour la partie du code ou on va builder un classe !!!! <== hum à vérifier si ce commentaire est pertinent NCOU) : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
+     //https://github.com/J7mbo/Auryn/blob/master/lib/Executable.php#L41
     public function invoke($callback, array $parameters = [])
     {
         $callable = $this->resolveCallable($callback);
@@ -141,6 +142,8 @@ final class Injector implements InvokerInterface, FactoryInterface
      * @throws Chiron\Injector\Exception\NotCallableException if $callable is not valid.
      * @throws ContainerExceptionInterface if an entry (ex: classname) cannot be resolved.
      */
+    // TODO : ne pas exposer en "public" cette méthode, mais il faudrait plutot que les packages qui ont besoin de faire un resolveCallable intégre le trait CallableResolverTrait pour accéder à la fonction resolveCallable !!! ca serait plus propre que d'exposer cette méthode !!!!
+    // TODO : renommer en resolveCallable !!!!
     public function resolve($callback): callable
     {
         return $this->resolveCallable($callback);
