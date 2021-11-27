@@ -7,10 +7,10 @@ namespace Chiron\Injector;
 interface InvokerInterface
 {
     /*
-     * @param callable|array|string $callable
-     * @param array  $arguments
+     * @param mixed $callable
+     * @param array  $parameters
      *
      * @return mixed
      */
-    public function invoke($callable, array $arguments = []);
+    public function invoke(mixed $callable, array $parameters = []): mixed;
 }

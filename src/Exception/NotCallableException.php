@@ -24,7 +24,7 @@ class NotCallableException extends InjectorException
     /**
      * @param mixed $callable Invalid callable value.
      */
-    public function __construct($callable)
+    public function __construct(mixed $callable)
     {
         $message = sprintf('Input is not callable : %s', self::getCallableError($callable));
 
@@ -36,7 +36,7 @@ class NotCallableException extends InjectorException
      *
      * @return string Detailed error message.
      */
-    private function getCallableError($callable): string
+    private function getCallableError(mixed $callable): string
     {
         if (\is_string($callable)) {
             return sprintf('"%s" is neither a php callable nor a valid container entry.', $callable);
@@ -103,9 +103,9 @@ class NotCallableException extends InjectorException
         return $message;
     }
 
-    private static function getClassMethodsWithoutMagicMethods($classOrObject): array
+    private static function getClassMethodsWithoutMagicMethods(object|string $class): array
     {
-        $methods = get_class_methods($classOrObject);
+        $methods = get_class_methods($class);
 
         return array_filter($methods, function (string $method) {
             return strncmp($method, '__', 2) !== 0;

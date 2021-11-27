@@ -7,11 +7,10 @@ namespace Chiron\Injector;
 interface FactoryInterface
 {
     /*
-     * @param string $className
-     * @param array  $arguments
+     * @param string $class
+     * @param array  $parameters
      *
      * @return object
      */
-    // TODO : ajouter le typehint pour le retour de la fonction avec "make(): object"
-    public function build(string $className, array $arguments = []);
+    public function build(string $class, array $parameters = []): object;
 }

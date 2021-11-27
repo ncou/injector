@@ -37,7 +37,7 @@ return sprintf('Closure at %s[%s:%s]',
 class InvalidParameterTypeException extends InjectorException
 {
     // mixed $value
-    public function __construct(ReflectionParameter $parameter, $value)
+    public function __construct(ReflectionParameter $parameter, mixed $value)
     {
         $type = is_object($value) ? get_class($value) : get_debug_type($value); // TODO : à terme utiliser un $this->type = is_object.......
 

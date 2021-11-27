@@ -26,7 +26,7 @@ trait CallableResolverTrait
      * @throws NotCallableException
      */
     // TODO : passer cette méthode en public ????
-    protected function resolveCallable($callable): callable
+    protected function resolveCallable(mixed $callable): callable
     {
         // The callable is a string in the form 'class::method'
         if (is_string($callable) && str_contains($callable, '::')) {
@@ -49,7 +49,7 @@ trait CallableResolverTrait
      *
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      */
-    private function resolveFromContainer($callable)
+    private function resolveFromContainer(mixed $callable): mixed
     {
         // If it's already a callable there is nothing to do.
         if (is_callable($callable)) {

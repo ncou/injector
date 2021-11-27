@@ -37,8 +37,7 @@ final class Injector implements InvokerInterface, FactoryInterface
     use ParameterResolverTrait;
     use ReflectorTrait;
 
-    /** ContainerInterface */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * Invoker constructor.
@@ -57,7 +56,7 @@ final class Injector implements InvokerInterface, FactoryInterface
     // TODO : améliorer le Circular exception avec le code : https://github.com/symfony/dependency-injection/blob/master/Container.php#L236
     // TODO : il n'y a pas un risque de références circulaires si on appel directement cette méthode qui est public.
     // TODO : ajouter le typehint pour le retour de la fonction avec "build(): object"
-    public function build(string $class, array $parameters = [])
+    public function build(string $class, array $parameters = []): object
     {
         // https://github.com/spiral/core/blob/02580dff7f1fcbc5e74caa1f78ea84c0e4c0d92e/src/Container.php#L534
         // https://github.com/spiral/core/blob/02580dff7f1fcbc5e74caa1f78ea84c0e4c0d92e/src/Container.php#L551
@@ -109,33 +108,24 @@ final class Injector implements InvokerInterface, FactoryInterface
      * @throws ContainerExceptionInterface if a dependency cannot be resolved or if a dependency cannot be fulfilled.
      * @throws \ReflectionException
      */
-    //$callback => callable|array|string
+     // TODO : corriger le phpdoc !!!!
+    //$callable => callable|array|string
     // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif (code à utiliser que dans le cadre d'un invoke() ca n'a pas de sens de ne pas avoir de tableau associatif pour la partie du code ou on va builder un classe !!!! <== hum à vérifier si ce commentaire est pertinent NCOU) : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
      //https://github.com/J7mbo/Auryn/blob/master/lib/Executable.php#L41
-    public function invoke($callback, array $parameters = [])
+    public function invoke(mixed $callable, array $parameters = []): mixed
     {
-        $callable = $this->resolveCallable($callback);
+        $callable = $this->resolveCallable($callable);
         $reflection = $this->reflectCallable($callable);
         // Try to match the callable parameters with the given parameters.
         $arguments = $this->resolveDependencies($reflection, $parameters);
 
         return $reflection->invokeArgs($arguments);
-        //return call_user_func_array($callable, $arguments);
-
-/*
-        if ($reflection instanceof \ReflectionMethod) {
-            $scope = is_object($callable[0]) ? $callable[0] : null;
-            return $reflection->invokeArgs($scope, $arguments);
-        }
-
-        return $reflection->invokeArgs($arguments);
-        */
     }
 
     /**
      * Resolve a pseudo callable in a valid php callable.
      *
-     * @param mixed $callback callable to be resolved.
+     * @param mixed $callable callable to be resolved.
      *
      * @return callable
      *
@@ -144,9 +134,9 @@ final class Injector implements InvokerInterface, FactoryInterface
      */
     // TODO : ne pas exposer en "public" cette méthode, mais il faudrait plutot que les packages qui ont besoin de faire un resolveCallable intégre le trait CallableResolverTrait pour accéder à la fonction resolveCallable !!! ca serait plus propre que d'exposer cette méthode !!!!
     // TODO : renommer en resolveCallable !!!!
-    public function resolve($callback): callable
+    public function resolve(mixed $callable): callable
     {
-        return $this->resolveCallable($callback);
+        return $this->resolveCallable($callable);
     }
 
     /**

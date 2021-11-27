@@ -16,8 +16,7 @@
     },
     "require": {
         "php": "^8.0|^8.1",
-        "psr/container": "^1.0|^2.0",
-        "symfony/polyfill-php80": "^1.23"
+        "psr/container": "^1.0|^2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",

@@ -18,22 +18,19 @@ use ReflectionParameter;
 // TODO : renommer en InjectorResolvingState::class ???
 final class ResolvingState
 {
-    private $reflection;
-
+    private ReflectionFunctionAbstract $reflection;
     /**
      * @var array<int, object>
      */
-    private $numericArguments = [];
-
+    private array $numericArguments = [];
     /**
      * @var array<string, mixed>
      */
-    private $namedArguments = [];
-
+    private array $namedArguments = [];
     /**
      * @var array<mixed>
      */
-    private $resolvedValues = [];
+    private array $resolvedValues = [];
 
     /**
      * Invoker constructor.
