@@ -480,7 +480,7 @@ class InjectorBuildTest extends TestCase
         $container = new Container();
 
         $object = (new Injector($container))
-            ->build(IntersectionClasses::class, ['engine' => new IntersectionEngine()]);
+            ->build(IntersectionClasses::class, ['class' => new IntersectionEngine()]);
 
         $this->assertInstanceOf(IntersectionClasses::class, $object);
     }

@@ -2,23 +2,26 @@
 
 namespace Chiron\Injector\Test;
 
-use Chiron\Injector\Test\Support\EngineInterface;
 
 interface AnotherInterface
 {
 }
 
+interface AgainAnotherInterface
+{
+}
+
 class IntersectionClasses
 {
-    public function __construct(EngineInterface&AnotherInterface $engine)
+    public function __construct(AnotherInterface&AgainAnotherInterface $class)
     {
     }
 }
 
 
-class IntersectionEngine implements EngineInterface, AnotherInterface
+class IntersectionEngine implements AnotherInterface, AgainAnotherInterface
 {
-    public function __construct(EngineInterface&AnotherInterface $engine)
+    public function __construct()
     {
     }
 }
