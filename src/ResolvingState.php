@@ -20,15 +20,15 @@ final class ResolvingState
 {
     private ReflectionFunctionAbstract $reflection;
     /**
-     * @var array<int, object>
+     * @psaml-var array<int, object>
      */
     private array $numericArguments = [];
     /**
-     * @var array<string, mixed>
+     * @psaml-var array<string, mixed>
      */
     private array $namedArguments = [];
     /**
-     * @var array<mixed>
+     * @psalm-var list<mixed>
      */
     private array $resolvedValues = [];
 

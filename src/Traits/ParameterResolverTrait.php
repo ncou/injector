@@ -114,6 +114,7 @@ trait ParameterResolverTrait
                 return true;
             }
 
+            // TODO : vérifier le cas ou on passe un non-array pour un paramétre variadic normalement cela devrait lever une erreur :   https://github.com/nette/di/blob/16f7d617d8ec5a08b0c4700f4cfc488fde4ed457/src/DI/Resolver.php#L506
             // We can't resolve a variadic parameter with a classname using the container 'foobar(\StdClass ...$myClasses)'
             if ($isVariadic) {
                 return false; // TODO : non pas forcément il peut il y avoir une valeur par défaut je pense !!!! 'foobar(?\StdClass ...$myClasses)' ou 'foobar(?\StdClass ...$myClasses = null)'

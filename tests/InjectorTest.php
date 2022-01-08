@@ -15,6 +15,37 @@ use Chiron\Injector\Test\Support\StaticMethod;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\NotFoundExceptionInterface;
 
+use Chiron\Injector\Exception\InjectorException;
+use StdClass;
+use DateTime;
+use DateTimeImmutable;
+use DateTimeInterface;
+
+use Chiron\Injector\Test\Support\CallStaticObject;
+use Chiron\Injector\Test\Support\CallStaticWithStaticObject;
+use Chiron\Injector\Test\Support\CallStaticWithSelfObject;
+use Chiron\Injector\Test\Support\StaticWithStaticObject;
+use Chiron\Injector\Test\Support\StaticWithSelfObject;
+use Chiron\Injector\Test\Support\MakeEngineCollector;
+
+// UNION/ INTERSECTION TESTS :
+
+//https://github.com/symfony/dependency-injection/blob/69c398723857bb19fdea78496cedea0f756decab/Tests/Fixtures/includes/uniontype_classes.php
+//https://github.com/symfony/dependency-injection/blob/69c398723857bb19fdea78496cedea0f756decab/Tests/Fixtures/includes/intersectiontype_classes.php
+//https://github.com/symfony/dependency-injection/blob/69c398723857bb19fdea78496cedea0f756decab/Tests/Fixtures/includes/autowiring_classes.php#L12
+
+//https://github.com/symfony/dependency-injection/blob/a7e4cff3e3e707827e09b0ff4c1acef40ba5d672/Tests/Compiler/CheckTypeDeclarationsPassTest.php#L959
+//https://github.com/symfony/dependency-injection/blob/69c398723857bb19fdea78496cedea0f756decab/Tests/Fixtures/CheckTypeDeclarationsPass/IntersectionConstructor.php
+
+//https://github.com/symfony/dependency-injection/blob/69c398723857bb19fdea78496cedea0f756decab/Tests/Compiler/AutowirePassTest.php#L284
+
+// TODO : créer un test pour l'utilisation de "false" dans l'union
+// @see https://php.watch/versions/8.0/union-types
+
+// TEST VARIADIC !!!
+//https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/tests/framework/di/testContainerWithVariadicCallable.php
+//https://github.com/yiisoft/yii2/blob/68a1c32400cbba297ce45dc1b3ab6bfc597903a2/tests/framework/di/ContainerTest.php#L485
+
 class InjectorTest extends TestCase
 {
     public function testInvokeClosure(): void
@@ -155,29 +186,277 @@ class InjectorTest extends TestCase
         ];
     }
 
-    /**
-     * @tes // TODO : à corriger !!!! + faire un test avec le method_exist voir le comportement !!!!
-     */
-    public function cannot_invoke_magic_method()
-    {
-        $this->expectExceptionMessage('Chiron\Injector\Test\InvokerTestMagicMethodFixture::foo() is not a callable. A __call() or __callStatic() method exists but magic methods are not supported.');
-        $this->expectException(NotCallableException::class);
 
+
+
+    public function testInvokeCallStatic(): void
+    {
         $container = new Container();
-        $result = (new Injector($container))->invoke([new InvokerTestMagicMethodFixture, 'foo']);
+
+        $result = (new Injector($container))->invoke([CallStaticObject::class, 'foo']);
+
+        $this->assertSame('bar', $result);
     }
 
     /**
-     * @tes // TODO : à corriger !!!! + faire un test avec le method_exist voir le comportement !!!!
+     * @dataProvider dataInvokeStaticWithStaticCalls
      */
-    public function cannot_invoke_static_magic_method()
+    public function testInvokeStaticWithStaticCalls(string $className): void
     {
-        $this->expectExceptionMessage('Chiron\Injector\Test\InvokerTestStaticMagicMethodFixture::foo() is not a callable. A __call() or __callStatic() method exists but magic methods are not supported.');
-        $this->expectException(NotCallableException::class);
+        if (
+            $className === CallStaticWithStaticObject::class
+            && version_compare(PHP_VERSION, '8.1.0', '<')
+        ) {
+            /** @link https://bugs.php.net/bug.php?id=81626 */
+            $this->markTestSkipped('Bug in PHP version below 8.1. See https://bugs.php.net/bug.php?id=81626');
+        }
 
         $container = new Container();
-        $result = (new Injector($container))->invoke([InvokerTestStaticMagicMethodFixture::class, 'foo']);
+
+        $result = (new Injector($container))->invoke([$className, 'foo']);
+
+        $this->assertSame('bar', $result);
     }
+
+    public function dataInvokeStaticWithStaticCalls(): array
+    {
+        return [
+            [CallStaticWithStaticObject::class],
+            [CallStaticWithSelfObject::class],
+            [StaticWithStaticObject::class],
+            [StaticWithSelfObject::class],
+        ];
+    }
+
+    /**
+     * Injector should be able to invoke static method.
+     */
+    public function testInvokeAnonymousClass(): void
+    {
+        $container = new Container([
+            EngineInterface::class => new EngineMarkTwo()
+        ]);
+
+        $class = new class () {
+            public EngineInterface $engine;
+
+            public function setEngine(EngineInterface $engine): void
+            {
+                $this->engine = $engine;
+            }
+        };
+
+        (new Injector($container))->invoke([$class, 'setEngine']);
+
+        $this->assertInstanceOf(EngineInterface::class, $class->engine);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * A values collection for a variadic argument can be passed as an array in a named parameter.
+     */
+    public function testAloneScalarVariadicParameterAndNamedArrayArgument(): void
+    {
+        $container = new Container();
+
+        $callable = fn (int ...$var) => array_sum($var);
+
+        $result = (new Injector($container))->invoke($callable, ['var' => [1, 2, 3], new stdClass()]);
+
+        $this->assertSame(6, $result);
+    }
+
+    public function testAloneScalarVariadicParameterAndNamedAssocArrayArgument(): void
+    {
+        $container = new Container();
+
+        $callable = fn (string $foo, string ...$bar) => $foo . '--' . implode('-', $bar);
+
+        $result = (new Injector($container))
+            ->invoke($callable, ['foo' => 'foo', 'bar' => ['foo' => 'baz', '0' => 'fiz']]);
+
+        $this->assertSame('foo--baz-fiz', $result);
+    }
+
+    public function testAloneScalarVariadicParameterAndNamedScalarArgument(): void
+    {
+        $container = new Container();
+
+        $callable = fn (int ...$var) => array_sum($var);
+
+        $result = (new Injector($container))->invoke($callable, ['var' => 42, new stdClass()]);
+
+        $this->assertSame(42, $result);
+    }
+
+    /**
+     * If type of a variadic argument is a class and named parameter with values collection is not set then injector
+     * will search for objects by class name among all unnamed parameters.
+     */
+    public function testVariadicArgumentUnnamedParams(): void
+    {
+        $container = new Container([DateTimeInterface::class => new DateTimeImmutable()]);
+
+        $callable = fn (DateTimeInterface $dateTime, EngineInterface ...$engines) => count($engines);
+
+        $result = (new Injector($container))->invoke(
+            $callable,
+            [new EngineMarkTwo(), new stdClass(), new EngineMarkTwo(), new stdClass()]
+        );
+
+        $this->assertSame(2, $result);
+    }
+
+    /**
+     * If calling method have an untyped variadic argument then all remaining unnamed parameters will be passed.
+     */
+    public function testVariadicMixedArgumentWithMixedParams(): void
+    {
+        $container = new Container([DateTimeInterface::class => new DateTimeImmutable()]);
+
+        $callable = fn (...$engines) => $engines;
+
+        $result = (new Injector($container))->invoke(
+            $callable,
+            ['engines' => [new EngineMarkTwo(), new stdClass(), new EngineMarkTwo(), new stdClass()]]
+        );
+
+        $this->assertCount(4, $result);
+    }
+
+    /**
+     * Any unnamed parameter can only be an object. Scalar, array, null and other values can only be named parameters.
+     */
+    public function testVariadicStringArgumentWithUnnamedStringsParams(): void
+    {
+        $container = new Container([DateTimeInterface::class => new DateTimeImmutable()]);
+
+        $callable = fn (string ...$engines) => $engines;
+
+        $this->expectException(InjectorException::class);
+        $this->expectExceptionMessage('Invalid arguments array. Non-object argument should be named explicitly when passed.');
+
+        (new Injector($container))->invoke($callable, ['str 1', 'str 2', 'str 3']);
+    }
+
+    /**
+     * In the absence of other values to a nullable variadic argument `null` is not passed by default.
+     */
+    public function testNullableVariadicArgument(): void
+    {
+        $container = new Container();
+
+        $callable = fn (?EngineInterface ...$engines) => $engines;
+
+        $result = (new Injector($container))->invoke($callable, []);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testNullableVariadicArgumentUsingNull(): void
+    {
+        $container = new Container();
+
+        $callable = fn (?EngineInterface ...$engines) => $engines;
+
+        $result = (new Injector($container))->invoke($callable, ['engines' => null]);
+
+        $this->assertSame([null], $result);
+    }
+
+    public function testNullableVariadicArgumentUsingObject(): void
+    {
+        $container = new Container();
+
+        $callable = fn (?EngineInterface ...$engines) => $engines;
+
+        $engine = new EngineMarkTwo();
+        $result = (new Injector($container))->invoke($callable, [$engine]);
+
+        $this->assertSame([$engine], $result);
+    }
+
+
+    public function testInvokeReferencedArgumentNamedVariadic(): void
+    {
+        $container = new Container();
+
+        $callable = static function (DateTimeInterface &...$dates) {
+            $dates[0] = false;
+            $dates[1] = false;
+            return count($dates);
+        };
+        $foo = new DateTimeImmutable();
+        $bar = new DateTimeImmutable();
+        $baz = new DateTimeImmutable();
+
+        $result = (new Injector($container))
+            ->invoke($callable, [
+                $foo,
+                &$bar,
+                &$baz,
+                new DateTime(),
+            ]);
+        unset($baz);
+
+        $this->assertSame(4, $result);
+        $this->assertInstanceOf(DateTimeImmutable::class, $foo);
+        $this->assertFalse($bar);
+    }
+
+
+
+    /**
+     * If type of a variadic argument is a class and its value is not passed in parameters, then no arguments will be
+     * passed, despite the fact that the container has a corresponding value.
+     */
+    public function testMakeWithVariadicFromContainer(): void
+    {
+        $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
+
+        $object = (new Injector($container))->build(MakeEngineCollector::class, []);
+
+        $this->assertCount(0, $object->engines);
+    }
+
+    public function testMakeWithVariadicFromArguments(): void
+    {
+        $container = new Container();
+
+        $values = [new EngineMarkTwo(), new EngineMarkTwo()];
+        $object = (new Injector($container))->build(MakeEngineCollector::class, $values);
+
+        $this->assertSame($values, $object->engines);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -228,7 +507,6 @@ class ControllerTest
     {
     }
 
-    // TODO : à virer !!!!
     public static function staticAction()
     {
     }
@@ -236,32 +514,4 @@ class ControllerTest
 
 class ControllerEmptyTest
 {
-}
-
-class InvokerTestMagicMethodFixture
-{
-    /** @var bool */
-    public $wasCalled = false;
-    public function __call(string $name, array $args): string
-    {
-        if ($name === 'foo') {
-            $this->wasCalled = true;
-            return 'bar';
-        }
-        throw new \Exception('Unknown method');
-    }
-}
-
-class InvokerTestStaticMagicMethodFixture
-{
-    /** @var bool */
-    public static $wasCalled = false;
-    public static function __callStatic(string $name, array $args): string
-    {
-        if ($name === 'foo') {
-            static::$wasCalled = true;
-            return 'bar';
-        }
-        throw new \Exception('Unknown method');
-    }
 }

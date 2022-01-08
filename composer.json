@@ -25,10 +25,15 @@
         "chiron/coding-standard": "^3.0"
     },
     "scripts": {
-        "phpunit": "phpunit --colors=always",
+        "phpunit": "phpunit --colors=always --testdox --verbose",
         "test-coverage": "phpunit --coverage-clover clover.xml",
         "phpstan": "phpstan analyse --ansi",
         "check-style": "phpcs src tests",
         "fix-style": "phpcbf src tests"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

@@ -18,7 +18,6 @@ use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineObject;
 use Chiron\Injector\Test\Support\EngineObject2;
 use Chiron\Injector\Test\Support\EngineMarkTwo;
-use Chiron\Injector\Test\Support\StaticMethod;
 use PHPUnit\Framework\TestCase;
 
 class InjectorBuildTest extends TestCase
