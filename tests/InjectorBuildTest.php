@@ -23,6 +23,8 @@ use Chiron\Injector\Test\Support\EngineMarkTwo;
 use Chiron\Injector\Test\Support\MakeEngineCollector;
 use Chiron\Injector\Test\Support\TimerUnionTypes;
 
+use Chiron\Injector\Exception\InjectorException;
+
 use DateTimeImmutable;
 use DateTimeInterface;
 
@@ -327,7 +329,7 @@ class InjectorBuildTest extends TestCase
         $this->assertSame(basename(__FILE__), $object->getFilename());
     }
 
-    public function testBuildClassWithUnionTypes(): void
+    public function testBuildClassWithUnionTypesAsDate(): void
     {
         $time = new DateTimeImmutable();
         $container = new Container();
@@ -336,5 +338,48 @@ class InjectorBuildTest extends TestCase
             ->build(TimerUnionTypes::class, ['time' => $time]);
 
         $this->assertSame($object->getTime(), $time);
+    }
+
+    public function testBuildClassWithUnionTypesAsString(): void
+    {
+        $time = '8th january 2021';
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(TimerUnionTypes::class, ['time' => $time]);
+
+        $this->assertSame($object->getTime(), $time);
+    }
+
+    public function testBuildClassWithUnionTypesInvalidThrowsInjectorException(): void
+    {
+        $container = new Container();
+
+        $this->expectException(InjectorException::class);
+        $this->expectExceptionMessage('Parameter 1 of "Chiron\Injector\Test\Support\TimerUnionTypes::__construct()" accepts "DateTimeInterface|string", "bool" passed.');
+
+        $object = (new Injector($container))
+            ->build(TimerUnionTypes::class, ['time' => false]);
+    }
+
+
+
+    public function testPrivateConstructorThrowsInjectorException(): void
+    {
+        $container = new Container();
+
+        $this->expectException(InjectorException::class);
+        $this->expectExceptionMessage('Class "Chiron\Injector\Test\PrivateConstructor" is not instantiable.');
+
+        $object = (new Injector($container))
+            ->build(PrivateConstructor::class);
+    }
+}
+
+
+class PrivateConstructor
+{
+    private function __construct()
+    {
     }
 }

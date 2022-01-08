@@ -39,10 +39,6 @@ class InvalidParameterTypeException extends InjectorException
     // mixed $value
     public function __construct(ReflectionParameter $parameter, mixed $value)
     {
-        $type = is_object($value) ? get_class($value) : get_debug_type($value); // TODO : à terme utiliser un $this->type = is_object.......
-
-        $this->code = $type; // TODO : c'est pas beau améliorer ce code !!!!
-
         $acceptedType = $parameter->getType();
         $acceptedType = $acceptedType instanceof ReflectionNamedType ? $acceptedType->getName() : (string) $acceptedType;
 
@@ -57,6 +53,8 @@ class InvalidParameterTypeException extends InjectorException
             $fileAndLine = " in \"$fileName\" at line $line";
         }
 */
+
+        $type = is_object($value) ? get_class($value) : get_debug_type($value);
 
         parent::__construct(sprintf('Parameter %d of "%s()" accepts "%s", "%s" passed.', $parameter->getPosition() + 1, $functionName, $acceptedType, $type)); // TODO : utiliser $this->type !!!!
     }

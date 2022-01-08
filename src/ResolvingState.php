@@ -7,7 +7,6 @@ namespace Chiron\Injector;
 use Chiron\Injector\Exception\InjectorException;
 use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Generator;
-use InvalidArgumentException;
 use ReflectionFunctionAbstract;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
@@ -59,14 +58,13 @@ final class ResolvingState
     }
 
     /**
-     * @psalm-param class-string|null $className
+     * @psalm-param class-string $className
      */
     public function resolveParameterByClass(string $className, bool $variadic): bool
     {
         $generator = $this->pullNumericArgument($className);
 
         if (! $variadic) {
-            // TODO : regarder dans quel cas le generator peut etre invalid !!!
             if (! $generator->valid()) {
                 return false;
             }
@@ -185,12 +183,11 @@ final class ResolvingState
                     $this->checkType($value, $parameter, $t);
 
                     return;
-                } catch (InvalidParameterTypeException $e) {
+                } catch (InvalidParameterTypeException) {
                 }
             }
 
-            // TODO : rendre le code plus propre en stockant dans l'exception le type et en ajoutant un getType() plutot que de bidouiller en stockant le type dans le code de l'exception.
-            throw new InvalidParameterTypeException($e->getCode(), $parameter);
+            throw new InvalidParameterTypeException($parameter, $value);
         }
 
         if ($reflectionType instanceof ReflectionIntersectionType) {
