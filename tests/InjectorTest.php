@@ -4,30 +4,26 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
+use Chiron\Injector\Exception\InjectorException;
 use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Chiron\Injector\Exception\MissingRequiredParameterException;
 use Chiron\Injector\Exception\NotCallableException;
 use Chiron\Injector\Injector;
 use Chiron\Injector\Test\Container\SimpleContainer as Container;
+use Chiron\Injector\Test\Support\CallStaticObject;
+use Chiron\Injector\Test\Support\CallStaticWithSelfObject;
+use Chiron\Injector\Test\Support\CallStaticWithStaticObject;
 use Chiron\Injector\Test\Support\ColorInterface;
 use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineMarkTwo;
 use Chiron\Injector\Test\Support\StaticMethod;
-use PHPUnit\Framework\TestCase;
-use Psr\Container\NotFoundExceptionInterface;
-
-use Chiron\Injector\Exception\InjectorException;
-use StdClass;
+use Chiron\Injector\Test\Support\StaticWithSelfObject;
+use Chiron\Injector\Test\Support\StaticWithStaticObject;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
-
-use Chiron\Injector\Test\Support\CallStaticObject;
-use Chiron\Injector\Test\Support\CallStaticWithStaticObject;
-use Chiron\Injector\Test\Support\CallStaticWithSelfObject;
-use Chiron\Injector\Test\Support\StaticWithStaticObject;
-use Chiron\Injector\Test\Support\StaticWithSelfObject;
-use Chiron\Injector\Test\Support\MakeEngineCollector;
+use PHPUnit\Framework\TestCase;
+use StdClass;
 
 // UNION/ INTERSECTION TESTS :
 
@@ -127,10 +123,6 @@ class InjectorTest extends TestCase
         $result = (new Injector($container))->invoke('trim', ['string' => false]);
     }
 
-
-
-
-
     public function testInvokeWithNonStaticMethod(): void
     {
         $this->expectExceptionMessage('Non-static method "getNameNonStatic" on class "Chiron\Injector\Test\Support\StaticMethod" should not be called statically.');
@@ -160,8 +152,8 @@ class InjectorTest extends TestCase
         $this->expectException(NotCallableException::class);
 
         $container = new Container([
-            ControllerTest::class => new ControllerTest(),
-            ControllerEmptyTest::class => new ControllerEmptyTest()
+            ControllerTest::class      => new ControllerTest(),
+            ControllerEmptyTest::class => new ControllerEmptyTest(),
         ]);
 
         $result = (new Injector($container))->invoke($controller);
@@ -200,9 +192,6 @@ class InjectorTest extends TestCase
             [null, 'Invalid type for controller given, expected string, array or object, got "null".'],
         ];
     }
-
-
-
 
     public function testInvokeCallStatic(): void
     {
@@ -249,7 +238,7 @@ class InjectorTest extends TestCase
     public function testInvokeAnonymousClass(): void
     {
         $container = new Container([
-            EngineInterface::class => new EngineMarkTwo()
+            EngineInterface::class => new EngineMarkTwo(),
         ]);
 
         $class = new class () {
@@ -265,21 +254,6 @@ class InjectorTest extends TestCase
 
         $this->assertInstanceOf(EngineInterface::class, $class->engine);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * A values collection for a variadic argument can be passed as an array in a named parameter.
@@ -336,10 +310,6 @@ class InjectorTest extends TestCase
         $this->assertSame(2, $result);
     }
 
-
-
-
-
     public function testVariadicDoesntUseTheContainer(): void
     {
         $container = new Container();
@@ -355,14 +325,6 @@ class InjectorTest extends TestCase
         );
     }
 
-
-
-
-
-
-
-
-
     public function testUnionTypeVariadicArgumentUnnamedParams(): void
     {
         $container = new Container();
@@ -376,17 +338,6 @@ class InjectorTest extends TestCase
 
         $this->assertSame(3, $result);
     }
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * If calling method have an untyped variadic argument then all remaining unnamed parameters will be passed.
@@ -457,7 +408,6 @@ class InjectorTest extends TestCase
         $this->assertSame([$engine], $result);
     }
 
-
     public function testInvokeReferencedArgumentNamedVariadic(): void
     {
         $container = new Container();
@@ -465,6 +415,7 @@ class InjectorTest extends TestCase
         $callable = static function (DateTimeInterface &...$dates) {
             $dates[0] = false;
             $dates[1] = false;
+
             return count($dates);
         };
         $foo = new DateTimeImmutable();
@@ -484,8 +435,6 @@ class InjectorTest extends TestCase
         $this->assertInstanceOf(DateTimeImmutable::class, $foo);
         $this->assertFalse($bar);
     }
-
-
 }
 
 

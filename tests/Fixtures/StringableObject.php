@@ -6,7 +6,8 @@ namespace Chiron\Injector\Test\Fixtures;
 
 class StringableObject
 {
-    public function __toString(): string {
+    public function __toString(): string
+    {
         return 'foobar';
     }
 }

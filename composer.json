@@ -1,9 +1,18 @@
 {
     "name": "chiron/injector",
     "description": "Give it a nice description!",
-    "keywords": [],
     "license": "MIT",
     "type": "library",
+    "keywords": [],
+    "require": {
+        "php": "^8.0 || ^8.1",
+        "psr/container": "^1.0 || ^2.0"
+    },
+    "require-dev": {
+        "chiron/devtools": "^1.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Chiron\\Injector\\": "src/"
@@ -14,26 +23,28 @@
             "Chiron\\Injector\\Test\\": "tests/"
         }
     },
-    "require": {
-        "php": "^8.0|^8.1",
-        "psr/container": "^1.0|^2.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^9.5",
-        "phpstan/phpstan": "^0.12",
-        "phpstan/phpstan-phpunit": "^0.12",
-        "chiron/coding-standard": "^3.0"
-    },
-    "scripts": {
-        "phpunit": "phpunit --colors=always --testdox --verbose",
-        "test-coverage": "phpunit --coverage-clover clover.xml",
-        "phpstan": "phpstan analyse --ansi",
-        "check-style": "phpcs src tests",
-        "fix-style": "phpcbf src tests"
-    },
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "composer/package-versions-deprecated": true,
+            "phpstan/extension-installer": true,
+            "ergebnis/composer-normalize": true,
+            "captainhook/plugin-composer": true,
+            "chiron/devtools": true
         }
+    },
+    "extra": {
+        "captainhook": {
+            "force-install": true
+        },
+        "chiron/devtools": {
+            "command-prefix": "dev"
+        },
+        "ramsey/conventional-commits": {
+            "configFile": "conventional-commits.json"
+        }
+    },
+    "scripts": {
+        "phpunit": "devtools dev:test:unit -- --colors=always --testdox --verbose"
     }
 }

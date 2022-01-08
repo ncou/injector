@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Exception;
 
-use function count;
-use function get_class;
-use function gettype;
-use function is_array;
-use function is_object;
-use function is_string;
+use ReflectionMethod;
+
 use function strlen;
 
 //https://github.com/symfony/http-kernel/blob/6.0/Controller/ControllerResolver.php#36
@@ -38,42 +34,42 @@ class NotCallableException extends InjectorException
      */
     private function getCallableError(mixed $callable): string
     {
-        if (\is_string($callable)) {
+        if (is_string($callable)) {
             return sprintf('"%s" is neither a php callable nor a valid container entry.', $callable);
         }
 
-        if (\is_object($callable)) {
+        if (is_object($callable)) {
             $availableMethods = self::getClassMethodsWithoutMagicMethods($callable);
             $alternativeMsg = $availableMethods ? sprintf(' or use one of the available methods: "%s"', implode('", "', $availableMethods)) : '';
 
             return sprintf('Controller class "%s" cannot be called without a method name. You need to implement "__invoke"%s.', get_debug_type($callable), $alternativeMsg);
         }
 
-        if (!\is_array($callable)) {
+        if (! is_array($callable)) {
             return sprintf('Invalid type for controller given, expected string, array or object, got "%s".', get_debug_type($callable));
         }
 
-        if (!isset($callable[0]) || !isset($callable[1]) || 2 !== \count($callable)) {
+        if (! isset($callable[0]) || ! isset($callable[1]) || count($callable) !== 2) {
             return 'Invalid array callable, expected [controller, method].';
         }
 
         [$controller, $method] = $callable;
-        if (\is_string($controller) && !class_exists($controller)) {
+        if (is_string($controller) && ! class_exists($controller)) {
             return sprintf('"%s" is neither a class name nor a valid container entry.', $controller);
         }
 
-        $className = \is_object($controller) ? get_debug_type($controller) : $controller;
+        $className = is_object($controller) ? get_debug_type($controller) : $controller;
 
         // TODO : attention je pense que si on passe en nom de méthode __call ou __callStatic la fonction method_exists ne fonctionnera pas bien !!!!
         // TODO : attention depuis la version 7.4 les méthodes privées suite à un extends ne sont plus détectées par l'appel à method_exists !!!!
         if (method_exists($controller, $method)) {
-            $reflection = new \ReflectionMethod($controller, $method);
+            $reflection = new ReflectionMethod($controller, $method);
 
             if ($reflection->isPublic() === false) {
                 return sprintf('Method "%s" on class "%s" should be public.', $method, $className);
             }
 
-            if (\is_string($controller) && $reflection->isStatic() === false) {
+            if (is_string($controller) && $reflection->isStatic() === false) {
                 return sprintf('Non-static method "%s" on class "%s" should not be called statically.', $method, $className);
             }
         }
@@ -84,7 +80,7 @@ class NotCallableException extends InjectorException
         foreach ($collection as $item) {
             $lev = levenshtein($method, $item);
 
-            if ($lev <= \strlen($method) / 3 || str_contains($item, $method)) {
+            if ($lev <= strlen($method) / 3 || str_contains($item, $method)) {
                 $alternatives[] = $item;
             }
         }
@@ -92,9 +88,9 @@ class NotCallableException extends InjectorException
 
         $message = sprintf('Expected method "%s" on class "%s"', $method, $className);
 
-        if (\count($alternatives) > 0) {
+        if (count($alternatives) > 0) {
             $message .= sprintf(', did you mean "%s"?', implode('", "', $alternatives));
-        } elseif (\count($collection) > 0) {
+        } elseif (count($collection) > 0) {
             $message .= sprintf('. Available methods: "%s".', implode('", "', $collection));
         } else {
             $message .= '.';

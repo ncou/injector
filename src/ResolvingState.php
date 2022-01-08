@@ -9,10 +9,9 @@ use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Generator;
 use ReflectionFunctionAbstract;
 use ReflectionIntersectionType;
-use ReflectionNamedType;
+use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
-use ReflectionParameter;
 
 // TODO : renommer en InjectorResolvingState::class ???
 final class ResolvingState
@@ -226,17 +225,17 @@ final class ResolvingState
             */
 
             // Function is_string() will not consider an object with __toString() as a string.
-            if ('string' === $type && method_exists($class, '__toString')) {
+            if ($type === 'string' && method_exists($class, '__toString')) {
                 return;
             }
         }
 
         if ($reflectionType->isBuiltin()) {
-            if ('mixed' === $type) {
+            if ($type === 'mixed') {
                 return;
             }
-            if ('false' === $type) {
-                if (false === $value) {
+            if ($type === 'false') {
+                if ($value === false) {
                     return;
                 }
             }

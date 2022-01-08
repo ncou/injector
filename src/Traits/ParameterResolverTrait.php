@@ -56,6 +56,7 @@ trait ParameterResolverTrait
     // TODO : renommer en resolveDependencies() ???
     //https://github.com/thephpleague/container/blob/82a57588c630663d2600f046753b23ab6dcda9b5/src/Argument/ArgumentResolverTrait.php#L66
     // TODO : exemple pour gérer les paramétres qui ne sont pas avec un tableau associatif : https://github.com/illuminate/container/blob/c2b6cc5807177579231df5dcb49d31e3a183f71e/BoundMethod.php#L127
+
     /**
      * @throws ContainerExceptionInterface Error while retrieving the entry from container.
      * @throws MissingRequiredParameterException
@@ -101,7 +102,6 @@ trait ParameterResolverTrait
     {
         $name = $parameter->getName();
         $isVariadic = $parameter->isVariadic();
-
 
         // Try to resolve parameter by name
         if ($state->resolveParameterByName($name, $isVariadic)) {

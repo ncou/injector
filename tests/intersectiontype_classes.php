@@ -1,7 +1,8 @@
 <?php
 
-namespace Chiron\Injector\Test;
+declare(strict_types=1);
 
+namespace Chiron\Injector\Test;
 
 interface AnotherInterface
 {

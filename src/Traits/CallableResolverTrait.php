@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Chiron\Injector\Traits;
 
 use Chiron\Injector\Exception\NotCallableException;
-use Psr\Container\NotFoundExceptionInterface;
-use ReflectionException;
-use ReflectionMethod;
 
 //https://github.com/PHP-DI/Invoker/blob/a812493e87bb4ed413584e4a98208f54c43475ec/src/CallableResolver.php
 //https://github.com/yiisoft/yii-event/blob/master/src/CallableFactory.php#L55

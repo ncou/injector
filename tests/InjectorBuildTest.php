@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
-use Chiron\Injector\Exception\MissingRequiredParameterException;
+use Chiron\Injector\Exception\InjectorException;
 use Chiron\Injector\Exception\InvalidParameterTypeException;
+use Chiron\Injector\Exception\MissingRequiredParameterException;
 use Chiron\Injector\Injector;
 use Chiron\Injector\Test\Container\SimpleContainer as Container;
-use Chiron\Injector\Test\Fixtures\TypedClass;
 use Chiron\Injector\Test\Fixtures\AdvancedTypedClass;
-use Chiron\Injector\Test\Fixtures\StringableObject;
-use Chiron\Injector\Test\Fixtures\TraversableObject;
 use Chiron\Injector\Test\Fixtures\InvokableObject;
 use Chiron\Injector\Test\Fixtures\NoConstructorClass;
-use Chiron\Injector\Test\Support\ColorInterface;
-use Chiron\Injector\Test\Support\EngineObject;
-use Chiron\Injector\Test\Support\EngineObject2;
-use PHPUnit\Framework\TestCase;
-
+use Chiron\Injector\Test\Fixtures\StringableObject;
+use Chiron\Injector\Test\Fixtures\TraversableObject;
+use Chiron\Injector\Test\Fixtures\TypedClass;
 use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineMarkTwo;
+use Chiron\Injector\Test\Support\EngineObject;
+use Chiron\Injector\Test\Support\EngineObject2;
+use Chiron\Injector\Test\Support\FalseUnionTypes;
 use Chiron\Injector\Test\Support\MakeEngineCollector;
 use Chiron\Injector\Test\Support\TimerUnionTypes;
-use Chiron\Injector\Test\Support\FalseUnionTypes;
-
-use Chiron\Injector\Exception\InjectorException;
-
+use Closure;
 use DateTimeImmutable;
-use DateTimeInterface;
+use PHPUnit\Framework\TestCase;
+use SplFileObject;
+use StdClass;
+
+use const PHP_VERSION_ID;
 
 class InjectorBuildTest extends TestCase
 {
@@ -38,7 +38,8 @@ class InjectorBuildTest extends TestCase
         $injector = new Injector($container);
 
         $object = $injector->build(
-            NoConstructorClass::class);
+            NoConstructorClass::class
+        );
 
         $this->assertInstanceOf(NoConstructorClass::class, $object);
     }
@@ -73,7 +74,7 @@ class InjectorBuildTest extends TestCase
         $object = $injector->build(
             AdvancedTypedClass::class,
             [
-                'callable' => new InvokableObject()
+                'callable' => new InvokableObject(),
             ]
         );
 
@@ -88,7 +89,7 @@ class InjectorBuildTest extends TestCase
         $object = $injector->build(
             AdvancedTypedClass::class,
             [
-                'callable' => \Closure::fromCallable(new InvokableObject())
+                'callable' => Closure::fromCallable(new InvokableObject()),
             ]
         );
 
@@ -103,7 +104,7 @@ class InjectorBuildTest extends TestCase
         $object = $injector->build(
             AdvancedTypedClass::class,
             [
-                'object' => new \StdClass()
+                'object' => new StdClass(),
             ]
         );
 
@@ -118,7 +119,7 @@ class InjectorBuildTest extends TestCase
         $object = $injector->build(
             AdvancedTypedClass::class,
             [
-                'iterable' => new TraversableObject()
+                'iterable' => new TraversableObject(),
             ]
         );
 
@@ -133,7 +134,7 @@ class InjectorBuildTest extends TestCase
         $object = $injector->build(
             AdvancedTypedClass::class,
             [
-                'iterable' => []
+                'iterable' => [],
             ]
         );
 
@@ -287,9 +288,6 @@ class InjectorBuildTest extends TestCase
         );
     }
 
-
-
-
     public function testBuildClassWithoutTypeHint(): void
     {
         $container = new Container();
@@ -300,9 +298,6 @@ class InjectorBuildTest extends TestCase
         $this->assertInstanceOf(NoTypeHintedClass::class, $object);
     }
 
-
-
-
     /**
      * If type of a variadic argument is a class and its value is not passed in parameters, then no arguments will be
      * passed, despite the fact that the container has a corresponding value.
@@ -311,7 +306,7 @@ class InjectorBuildTest extends TestCase
     {
         $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
 
-        $object = (new Injector($container))->build(MakeEngineCollector::class, ['engines' =>[]]);
+        $object = (new Injector($container))->build(MakeEngineCollector::class, ['engines' => []]);
 
         $this->assertCount(0, $object->engines);
     }
@@ -326,22 +321,20 @@ class InjectorBuildTest extends TestCase
         $this->assertSame($values, $object->engines);
     }
 
-
     public function testBuildInternalClass(): void
     {
         $container = new Container();
 
-        $object = (new Injector($container))->build(\SplFileObject::class, [
-            'filename' => __FILE__,
+        $object = (new Injector($container))->build(SplFileObject::class, [
+            'filename'        => __FILE__,
             // second parameter skipped
             // third parameter skipped
-            'context' => null,
+            'context'         => null,
             'other-parameter' => true,
         ]);
 
         $this->assertSame(basename(__FILE__), $object->getFilename());
     }
-
 
     public function testBuildClassWithUnionTypesAsObject(): void
     {
@@ -353,12 +346,6 @@ class InjectorBuildTest extends TestCase
         $object = (new Injector($container))
             ->build(TimerUnionTypes::class, [new DateTimeImmutable()]);
     }
-
-
-
-
-
-
 
     public function testBuildClassWithUnionTypesAsDate(): void
     {
@@ -393,8 +380,6 @@ class InjectorBuildTest extends TestCase
             ->build(TimerUnionTypes::class, ['time' => false]);
     }
 
-
-
     public function testBuildClassWithUnionTypesAsFalse(): void
     {
         $container = new Container();
@@ -417,7 +402,6 @@ class InjectorBuildTest extends TestCase
             ->build('NonExistingClass');
     }
 
-
     public function testPrivateConstructorThrowsInjectorException(): void
     {
         $container = new Container();
@@ -439,7 +423,6 @@ class InjectorBuildTest extends TestCase
         $this->assertInstanceOf(SelfClass::class, $object->class);
     }
 
-
     public function testBuildClassWithParentKeyword(): void
     {
         $container = new Container();
@@ -449,9 +432,6 @@ class InjectorBuildTest extends TestCase
 
         $this->assertInstanceOf(SelfClass::class, $object->class);
     }
-
-
-
 
     /**
      * @requires PHP 8.1
@@ -466,7 +446,6 @@ class InjectorBuildTest extends TestCase
         $object = (new Injector($container))
             ->build(IntersectionClasses::class, [new \stdClass()]);
     }
-
 
     /**
      * @requires PHP 8.1
@@ -494,20 +473,6 @@ class InjectorBuildTest extends TestCase
 
         $this->assertInstanceOf(IntersectionClasses::class, $object);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 
@@ -547,6 +512,6 @@ class ParentClass extends SelfClass
     }
 }
 
-if (\PHP_VERSION_ID >= 80100) {
-    require __DIR__.'/intersectiontype_classes.php';
+if (PHP_VERSION_ID >= 80100) {
+    require __DIR__ . '/intersectiontype_classes.php';
 }
