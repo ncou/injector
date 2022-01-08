@@ -22,6 +22,7 @@ use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineMarkTwo;
 use Chiron\Injector\Test\Support\MakeEngineCollector;
 use Chiron\Injector\Test\Support\TimerUnionTypes;
+use Chiron\Injector\Test\Support\FalseUnionTypes;
 
 use Chiron\Injector\Exception\InjectorException;
 
@@ -364,6 +365,19 @@ class InjectorBuildTest extends TestCase
 
 
 
+    public function testBuildClassWithUnionTypesAsFalse(): void
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(FalseUnionTypes::class, ['value' => false, 'extra' => null]);
+
+        $this->assertSame($object->getValue(), false);
+        $this->assertSame($object->getExtra(), null);
+    }
+
+
+
     public function testPrivateConstructorThrowsInjectorException(): void
     {
         $container = new Container();
@@ -374,6 +388,10 @@ class InjectorBuildTest extends TestCase
         $object = (new Injector($container))
             ->build(PrivateConstructor::class);
     }
+
+
+
+
 }
 
 
