@@ -198,21 +198,20 @@ final class ResolvingState
             return;
         }
 
-        // TODO : ---- START Mutualiser le code avec la méthode getParameterClassName car il y a du code dupliqué !!!! ----
         if (! $reflectionType instanceof ReflectionNamedType) {
             return;
         }
 
         $type = $reflectionType->getName();
 
-        // TODO : il faudrait pas gérer aussi le cas du 'parent' ????
-        // TODO : attention il se peut que le getDeclaringClass retourne null !!! donc le getName lévera une erreur !!!!
+        // https://github.com/nette/utils/blob/508fb844b5636bb7f69c8bf0166403323cea755d/src/Utils/Type.php#L88
         if ($type === 'self') {
             $type = $parameter->getDeclaringClass()->getName();
         }
-        // TODO : ---- END ----
 
-
+        if ($type === 'parent' && $parent = $parameter->getDeclaringClass()->getParentClass()) {
+            $type = $parent->getName();
+        }
 
         if ($value === null && $parameter->allowsNull()) {
             return;

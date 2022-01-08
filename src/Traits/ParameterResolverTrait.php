@@ -170,6 +170,7 @@ trait ParameterResolverTrait
 
         $name = $type->getName();
 
+        //https://github.com/nette/utils/blob/508fb844b5636bb7f69c8bf0166403323cea755d/src/Utils/Type.php#L88
         if (! is_null($class = $parameter->getDeclaringClass())) {
             if ($name === 'self') {
                 return $class->getName();

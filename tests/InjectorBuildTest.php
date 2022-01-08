@@ -389,8 +389,26 @@ class InjectorBuildTest extends TestCase
             ->build(PrivateConstructor::class);
     }
 
+    public function testBuildClassWithSelfKeyword(): void
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(SelfClass::class, [new SelfClass(null)]);
+
+        $this->assertInstanceOf(SelfClass::class, $object->class);
+    }
 
 
+    public function testBuildClassWithParentKeyword(): void
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(ParentClass::class, [new SelfClass(null)]);
+
+        $this->assertInstanceOf(SelfClass::class, $object->class);
+    }
 
 }
 
@@ -399,5 +417,26 @@ class PrivateConstructor
 {
     private function __construct()
     {
+    }
+}
+
+class SelfClass
+{
+    public ?self $class;
+
+    public function __construct(?self $class)
+    {
+        $this->class = $class;
+    }
+}
+
+
+class ParentClass extends SelfClass
+{
+    public ?parent $class;
+
+    public function __construct(?parent $class)
+    {
+        $this->class = $class;
     }
 }

@@ -72,6 +72,7 @@ trait ReflectorTrait
     //https://github.com/J7mbo/Auryn/blob/master/lib/Executable.php#L41
     protected function reflectCallable(callable $callable): ReflectionFunction
     {
+        // TODO : il faudrait pas vérifier que ce n'est pas DEJA une Closure avant de faire le wrap ???? ou PHP est suffisament malin pour ne pas faire un "wrap de wrap"
         // Wrap the callable in a Closure to simplify the reflection code.
         $callable = Closure::fromCallable($callable);
         $reflection = new ReflectionFunction($callable);
