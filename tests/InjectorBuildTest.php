@@ -370,10 +370,10 @@ class InjectorBuildTest extends TestCase
         $container = new Container();
 
         $object = (new Injector($container))
-            ->build(FalseUnionTypes::class, ['value' => false, 'extra' => null]);
+            ->build(FalseUnionTypes::class, ['value' => false, 'extra' => false]);
 
         $this->assertSame($object->getValue(), false);
-        $this->assertSame($object->getExtra(), null);
+        $this->assertSame($object->getExtra(), false);
     }
 
 
