@@ -285,8 +285,19 @@ class InjectorBuildTest extends TestCase
                 'array'  => 'not array',
             ]
         );
+    }
 
-        $this->assertInstanceOf(TypedClass::class, $object);
+
+
+
+    public function testBuildClassWithoutTypeHint(): void
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(NoTypeHintedClass::class, ['value' => 'foobar']);
+
+        $this->assertInstanceOf(NoTypeHintedClass::class, $object);
     }
 
 
@@ -331,8 +342,6 @@ class InjectorBuildTest extends TestCase
         $this->assertSame(basename(__FILE__), $object->getFilename());
     }
 
-
-    //*****************
 
     public function testBuildClassWithUnionTypesAsObject(): void
     {
@@ -463,6 +472,19 @@ class InjectorBuildTest extends TestCase
             ->build(IntersectionClasses::class, ['engine' => new \stdClass()]);
     }
 
+    /**
+     * @requires PHP 8.1
+     */
+    public function testBuildClassWithIntersectionType()
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(IntersectionClasses::class, ['engine' => new IntersectionEngine()]);
+
+        $this->assertInstanceOf(IntersectionClasses::class, $object);
+    }
+
 
 
 
@@ -485,6 +507,14 @@ class PrivateConstructor
     {
     }
 }
+
+class NoTypeHintedClass
+{
+    public function __construct($value)
+    {
+    }
+}
+
 
 class SelfClass
 {
