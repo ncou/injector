@@ -14,11 +14,17 @@ use Chiron\Injector\Test\Fixtures\TraversableObject;
 use Chiron\Injector\Test\Fixtures\InvokableObject;
 use Chiron\Injector\Test\Fixtures\NoConstructorClass;
 use Chiron\Injector\Test\Support\ColorInterface;
-use Chiron\Injector\Test\Support\EngineInterface;
 use Chiron\Injector\Test\Support\EngineObject;
 use Chiron\Injector\Test\Support\EngineObject2;
-use Chiron\Injector\Test\Support\EngineMarkTwo;
 use PHPUnit\Framework\TestCase;
+
+use Chiron\Injector\Test\Support\EngineInterface;
+use Chiron\Injector\Test\Support\EngineMarkTwo;
+use Chiron\Injector\Test\Support\MakeEngineCollector;
+use Chiron\Injector\Test\Support\TimerUnionTypes;
+
+use DateTimeImmutable;
+use DateTimeInterface;
 
 class InjectorBuildTest extends TestCase
 {
@@ -277,5 +283,58 @@ class InjectorBuildTest extends TestCase
         );
 
         $this->assertInstanceOf(TypedClass::class, $object);
+    }
+
+
+
+
+    /**
+     * If type of a variadic argument is a class and its value is not passed in parameters, then no arguments will be
+     * passed, despite the fact that the container has a corresponding value.
+     */
+    public function testMakeWithVariadicFromContainer(): void
+    {
+        $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
+
+        $object = (new Injector($container))->build(MakeEngineCollector::class, []);
+
+        $this->assertCount(0, $object->engines);
+    }
+
+    public function testMakeWithVariadicFromArguments(): void
+    {
+        $container = new Container();
+
+        $values = [new EngineMarkTwo(), new EngineMarkTwo()];
+        $object = (new Injector($container))->build(MakeEngineCollector::class, $values);
+
+        $this->assertSame($values, $object->engines);
+    }
+
+
+    public function testBuildInternalClass(): void
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))->build(\SplFileObject::class, [
+            'filename' => __FILE__,
+            // second parameter skipped
+            // third parameter skipped
+            'context' => null,
+            'other-parameter' => true,
+        ]);
+
+        $this->assertSame(basename(__FILE__), $object->getFilename());
+    }
+
+    public function testBuildClassWithUnionTypes(): void
+    {
+        $time = new DateTimeImmutable();
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(TimerUnionTypes::class, ['time' => $time]);
+
+        $this->assertSame($object->getTime(), $time);
     }
 }

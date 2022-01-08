@@ -420,28 +420,7 @@ class InjectorTest extends TestCase
 
 
 
-    /**
-     * If type of a variadic argument is a class and its value is not passed in parameters, then no arguments will be
-     * passed, despite the fact that the container has a corresponding value.
-     */
-    public function testMakeWithVariadicFromContainer(): void
-    {
-        $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
 
-        $object = (new Injector($container))->build(MakeEngineCollector::class, []);
-
-        $this->assertCount(0, $object->engines);
-    }
-
-    public function testMakeWithVariadicFromArguments(): void
-    {
-        $container = new Container();
-
-        $values = [new EngineMarkTwo(), new EngineMarkTwo()];
-        $object = (new Injector($container))->build(MakeEngineCollector::class, $values);
-
-        $this->assertSame($values, $object->engines);
-    }
 
 
 
