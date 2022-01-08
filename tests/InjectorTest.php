@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
+use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Chiron\Injector\Exception\MissingRequiredParameterException;
 use Chiron\Injector\Exception\NotCallableException;
 use Chiron\Injector\Injector;
@@ -116,14 +117,14 @@ class InjectorTest extends TestCase
         $injector->invoke($getEngineName);
     }
 
-    public function testInvokeMissingRequiredClassParameterOnReflectionMethod(): void
+    public function testInvokeMissingRequiredClassParameterOnFunction(): void
     {
         $container = new Container();
 
-        $this->expectExceptionMessage('Missing required value for parameter "$foo" when calling "Chiron\Injector\Test\ControllerStaticMethod::staticMethod"');
-        $this->expectException(MissingRequiredParameterException::class);
+        $this->expectExceptionMessage('Parameter 1 of "trim()" accepts "string", "bool" passed.');
+        $this->expectException(InvalidParameterTypeException::class);
 
-        $result = (new Injector($container))->invoke([ControllerStaticMethod::class, 'staticMethod'], []);
+        $result = (new Injector($container))->invoke('trim', ['string' => false]);
     }
 
 
@@ -518,11 +519,4 @@ class ControllerTest
 
 class ControllerEmptyTest
 {
-}
-
-class ControllerStaticMethod
-{
-    public static function staticMethod(string $foo)
-    {
-    }
 }
