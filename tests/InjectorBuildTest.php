@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chiron\Injector\Test;
 
+use Chiron\Injector\Exception\MissingRequiredParameterException;
 use Chiron\Injector\Exception\InvalidParameterTypeException;
 use Chiron\Injector\Injector;
 use Chiron\Injector\Test\Container\SimpleContainer as Container;
@@ -330,6 +331,26 @@ class InjectorBuildTest extends TestCase
         $this->assertSame(basename(__FILE__), $object->getFilename());
     }
 
+
+    //*****************
+
+    public function testBuildClassWithUnionTypesAsObject(): void
+    {
+        $container = new Container();
+
+        $this->expectException(MissingRequiredParameterException::class);
+        $this->expectExceptionMessage('Missing required value for parameter "$time" when calling "Chiron\Injector\Test\Support\TimerUnionTypes::__construct"');
+
+        $object = (new Injector($container))
+            ->build(TimerUnionTypes::class, [new DateTimeImmutable()]);
+    }
+
+
+
+
+
+
+
     public function testBuildClassWithUnionTypesAsDate(): void
     {
         $time = new DateTimeImmutable();
@@ -416,25 +437,30 @@ class InjectorBuildTest extends TestCase
     /**
      * @requires PHP 8.1
      */
-    public function testGuessableIntersectionType()
+    public function testBuildClassWithIntersectionTypeMissingParameter()
     {
         $container = new Container();
+
+        $this->expectException(MissingRequiredParameterException::class);
+        $this->expectExceptionMessage('Missing required value for parameter "$engine" when calling "Chiron\Injector\Test\IntersectionClasses::__construct"');
 
         $object = (new Injector($container))
             ->build(IntersectionClasses::class, [new \stdClass()]);
-
-        $this->assertInstanceOf(\stdClass::class, $object);
     }
 
 
-    public function testGuessableIntersectionType2()
+    /**
+     * @requires PHP 8.1
+     */
+    public function testBuildClassWithIntersectionTypeUsingWrongType()
     {
         $container = new Container();
 
+        $this->expectException(InvalidParameterTypeException::class);
+        $this->expectExceptionMessage('Parameter 1 of "Chiron\Injector\Test\IntersectionClasses::__construct()" accepts "Chiron\Injector\Test\EngineInterface&Chiron\Injector\Test\AnotherInterface", "stdClass" passed.');
+
         $object = (new Injector($container))
             ->build(IntersectionClasses::class, ['engine' => new \stdClass()]);
-
-        $this->assertInstanceOf(\stdClass::class, $object);
     }
 
 
