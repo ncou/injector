@@ -410,6 +410,46 @@ class InjectorBuildTest extends TestCase
         $this->assertInstanceOf(SelfClass::class, $object->class);
     }
 
+
+
+
+    /**
+     * @requires PHP 8.1
+     */
+    public function testGuessableIntersectionType()
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(IntersectionClasses::class, [new \stdClass()]);
+
+        $this->assertInstanceOf(\stdClass::class, $object);
+    }
+
+
+    public function testGuessableIntersectionType2()
+    {
+        $container = new Container();
+
+        $object = (new Injector($container))
+            ->build(IntersectionClasses::class, ['engine' => new \stdClass()]);
+
+        $this->assertInstanceOf(\stdClass::class, $object);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 
@@ -439,4 +479,8 @@ class ParentClass extends SelfClass
     {
         $this->class = $class;
     }
+}
+
+if (\PHP_VERSION_ID >= 80100) {
+    require __DIR__.'/intersectiontype_classes.php';
 }
