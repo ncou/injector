@@ -321,6 +321,34 @@ class InjectorTest extends TestCase
         $this->assertSame(2, $result);
     }
 
+
+
+
+    public function testUnionTypeVariadicArgumentUnnamedParams(): void
+    {
+        $container = new Container();
+
+        $callable = fn (DateTimeInterface|EngineInterface ...$engines) => count($engines);
+
+        $result = (new Injector($container))->invoke(
+            $callable,
+            ['engines' => [new EngineMarkTwo(), new DateTimeImmutable(), new EngineMarkTwo()]]
+        );
+
+        $this->assertSame(3, $result);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * If calling method have an untyped variadic argument then all remaining unnamed parameters will be passed.
      */
@@ -446,20 +474,6 @@ class InjectorTest extends TestCase
 
 
 
-
-    /**
-     * @requires PHP >= 8.0
-     */
-    /*
-    public function testInjectionUsingUnionTypes(): void
-    {
-        $this->expectException(ContainerException::class);
-        $this->expectExceptionMessage('union type hint that cannot be inferred unambiguously');
-
-        $container = new Container();
-
-        $container->resolveArguments(new \ReflectionMethod(UnionTypes::class, 'example'));
-    }*/
 }
 
 

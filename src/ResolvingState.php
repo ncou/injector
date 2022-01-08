@@ -198,10 +198,6 @@ final class ResolvingState
             return;
         }
 
-        if (! $reflectionType instanceof ReflectionNamedType) {
-            return;
-        }
-
         $type = $reflectionType->getName();
 
         // https://github.com/nette/utils/blob/508fb844b5636bb7f69c8bf0166403323cea755d/src/Utils/Type.php#L88
