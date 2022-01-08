@@ -116,6 +116,20 @@ class InjectorTest extends TestCase
         $injector->invoke($getEngineName);
     }
 
+    public function testInvokeMissingRequiredClassParameterOnReflectionMethod(): void
+    {
+        $container = new Container();
+
+        $this->expectExceptionMessage('Missing required value for parameter "$foo" when calling "Chiron\Injector\Test\ControllerStaticMethod::staticMethod"');
+        $this->expectException(MissingRequiredParameterException::class);
+
+        $result = (new Injector($container))->invoke([ControllerStaticMethod::class, 'staticMethod'], []);
+    }
+
+
+
+
+
     public function testInvokeWithNonStaticMethod(): void
     {
         $this->expectExceptionMessage('Non-static method "getNameNonStatic" on class "Chiron\Injector\Test\Support\StaticMethod" should not be called statically.');
@@ -447,33 +461,6 @@ class InjectorTest extends TestCase
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 
@@ -507,4 +494,11 @@ class ControllerTest
 
 class ControllerEmptyTest
 {
+}
+
+class ControllerStaticMethod
+{
+    public static function staticMethod(string $foo)
+    {
+    }
 }
