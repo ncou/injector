@@ -338,6 +338,30 @@ class InjectorTest extends TestCase
 
 
 
+
+    public function testVariadicDoesntUseTheContainer(): void
+    {
+        $container = new Container();
+
+        $this->expectExceptionMessage('Missing required value for parameter "$engines" when calling "Chiron\Injector\Test\InjectorTest::Chiron\Injector\Test\{closure}"');
+        $this->expectException(MissingRequiredParameterException::class);
+
+        $callable = fn (EngineInterface ...$engines) => count($engines);
+
+        $result = (new Injector($container))->invoke(
+            $callable,
+            ['useless' => EngineMarkTwo::class, new stdClass()]
+        );
+    }
+
+
+
+
+
+
+
+
+
     public function testUnionTypeVariadicArgumentUnnamedParams(): void
     {
         $container = new Container();
@@ -404,9 +428,9 @@ class InjectorTest extends TestCase
 
         $callable = fn (?EngineInterface ...$engines) => $engines;
 
-        $result = (new Injector($container))->invoke($callable, []);
+        $result = (new Injector($container))->invoke($callable, ['engines' => null]);
 
-        $this->assertSame([], $result);
+        $this->assertSame([null], $result);
     }
 
     public function testNullableVariadicArgumentUsingNull(): void

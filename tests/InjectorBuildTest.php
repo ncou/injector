@@ -311,7 +311,7 @@ class InjectorBuildTest extends TestCase
     {
         $container = new Container([EngineInterface::class => new EngineMarkTwo()]);
 
-        $object = (new Injector($container))->build(MakeEngineCollector::class, []);
+        $object = (new Injector($container))->build(MakeEngineCollector::class, ['engines' =>[]]);
 
         $this->assertCount(0, $object->engines);
     }
@@ -406,6 +406,16 @@ class InjectorBuildTest extends TestCase
         $this->assertSame($object->getExtra(), false);
     }
 
+    public function testNonExistingClassThrowsInjectorException(): void
+    {
+        $container = new Container();
+
+        $this->expectException(InjectorException::class);
+        $this->expectExceptionMessage('Class "NonExistingClass" does not exist.');
+
+        $object = (new Injector($container))
+            ->build('NonExistingClass');
+    }
 
 
     public function testPrivateConstructorThrowsInjectorException(): void

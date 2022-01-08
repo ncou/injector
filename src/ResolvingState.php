@@ -64,17 +64,16 @@ final class ResolvingState
     {
         $generator = $this->pullNumericArgument($className);
 
-        if (! $variadic) {
-            if (! $generator->valid()) {
-                return false;
-            }
-            $value = $generator->current();
-            $this->addResolvedValue($value);
-
-            return true;
+        if (! $generator->valid()) {
+            return false;
         }
 
-        foreach ($generator as &$value) {
+        if ($variadic === true) {
+            foreach ($generator as &$value) {
+                $this->addResolvedValue($value);
+            }
+        } else {
+            $value = $generator->current();
             $this->addResolvedValue($value);
         }
 

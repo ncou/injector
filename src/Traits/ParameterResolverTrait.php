@@ -102,6 +102,7 @@ trait ParameterResolverTrait
         $name = $parameter->getName();
         $isVariadic = $parameter->isVariadic();
 
+
         // Try to resolve parameter by name
         if ($state->resolveParameterByName($name, $isVariadic)) {
             return true;
@@ -109,6 +110,7 @@ trait ParameterResolverTrait
 
         // Class name is null if there is no typehint or in case of scalar or in case of Union/Intersection typehint (php8.0/8.1).
         $class = $this->getParameterClassName($parameter);
+
         if ($class !== null) {
             if ($state->resolveParameterByClass($class, $isVariadic)) {
                 return true;
