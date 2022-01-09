@@ -33,7 +33,8 @@ final class ResolvingState
     /**
      * Invoker constructor.
      *
-     * @param $container
+     * @param ReflectionFunctionAbstract $reflection
+     * @param array $arguments
      */
     public function __construct(ReflectionFunctionAbstract $reflection, array $arguments)
     {
@@ -224,7 +225,7 @@ final class ResolvingState
             The is_string function checks the type of the variable and return true only if the type of the parameter provided is string. Because objects from classes that implement __toString are objects, is_string() function returns false on objects even if they comply with Stringable interface with or without explicit declaration.
             */
 
-            // Function is_string() will not consider an object with __toString() as a string.
+            // Function is_string() will not consider an object with __toString() as a "string".
             if ($type === 'string' && method_exists($class, '__toString')) {
                 return;
             }

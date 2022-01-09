@@ -42,7 +42,7 @@ final class Injector implements InvokerInterface, FactoryInterface
     /**
      * Invoker constructor.
      *
-     * @param $container
+     * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container)
     {

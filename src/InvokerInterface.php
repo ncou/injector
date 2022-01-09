@@ -6,9 +6,9 @@ namespace Chiron\Injector;
 
 interface InvokerInterface
 {
-    /*
+    /**
      * @param mixed $callable
-     * @param array  $parameters
+     * @param array $parameters
      *
      * @return mixed
      */

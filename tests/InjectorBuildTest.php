@@ -444,7 +444,7 @@ class InjectorBuildTest extends TestCase
         $this->expectExceptionMessage('Missing required value for parameter "$class" when calling "Chiron\Injector\Test\IntersectionClasses::__construct"');
 
         $object = (new Injector($container))
-            ->build(IntersectionClasses::class, [new \stdClass()]);
+            ->build(IntersectionClasses::class, [new StdClass()]);
     }
 
     /**
@@ -458,7 +458,7 @@ class InjectorBuildTest extends TestCase
         $this->expectExceptionMessage('Parameter 1 of "Chiron\Injector\Test\IntersectionClasses::__construct()" accepts "Chiron\Injector\Test\AnotherInterface&Chiron\Injector\Test\AgainAnotherInterface", "stdClass" passed.');
 
         $object = (new Injector($container))
-            ->build(IntersectionClasses::class, ['class' => new \stdClass()]);
+            ->build(IntersectionClasses::class, ['class' => new StdClass()]);
     }
 
     /**

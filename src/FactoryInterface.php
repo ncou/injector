@@ -6,7 +6,7 @@ namespace Chiron\Injector;
 
 interface FactoryInterface
 {
-    /*
+    /**
      * @param string $class
      * @param array  $parameters
      *
