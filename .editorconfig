@@ -1,9 +1,6 @@
-# EditorConfig http://EditorConfig.org
-
-# top-most EditorConfig file
+# editorconfig.org
 root = true
 
-# This applies to all files
 [*]
 end_of_line = lf
 insert_final_newline = true
@@ -14,3 +11,9 @@ indent_size = 4
 
 [*.{yml,yaml}]
 indent_size = 2
+
+[*.neon]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = false

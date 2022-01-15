@@ -109,6 +109,7 @@ trait ParameterResolverTrait
         }
 
         // Class name is null if there is no typehint or in case of scalar or in case of Union/Intersection typehint (php8.0/8.1).
+        /** @psalm-var class-string|null $class */
         $class = $this->getParameterClassName($parameter);
 
         if ($class !== null) {

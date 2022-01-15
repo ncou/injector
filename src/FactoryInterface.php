@@ -8,7 +8,7 @@ interface FactoryInterface
 {
     /**
      * @param string $class
-     * @param array  $parameters
+     * @param array<mixed>  $parameters
      *
      * @return object
      */

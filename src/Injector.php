@@ -106,6 +106,7 @@ final class Injector implements InvokerInterface, FactoryInterface
      *
      * @throws MissingRequiredArgumentException  if required argument is missing.
      * @throws ContainerExceptionInterface if a dependency cannot be resolved or if a dependency cannot be fulfilled.
+     * @throws NotCallableException if the callable is invalid
      * @throws \ReflectionException
      */
      // TODO : corriger le phpdoc !!!!

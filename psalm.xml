@@ -14,4 +14,19 @@
         </ignoreFiles>
     </projectFiles>
 
+    <issueHandlers>
+        <InvalidThrow>
+            <errorLevel type="suppress">
+                <referencedClass name="Psr\Container\ContainerExceptionInterface" />
+                <referencedClass name="Psr\Container\NotFoundExceptionInterface" />
+            </errorLevel>
+        </InvalidThrow>
+        <InvalidCatch>
+            <errorLevel type="suppress">
+                <referencedClass name="Psr\Container\ContainerExceptionInterface" />
+                <referencedClass name="Psr\Container\NotFoundExceptionInterface" />
+            </errorLevel>
+        </InvalidCatch>
+    </issueHandlers>
+
 </psalm>

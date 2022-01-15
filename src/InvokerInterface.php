@@ -8,7 +8,7 @@ interface InvokerInterface
 {
     /**
      * @param mixed $callable
-     * @param array $parameters
+     * @param array<mixed> $parameters
      *
      * @return mixed
      */

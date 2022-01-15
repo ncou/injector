@@ -99,6 +99,11 @@ class NotCallableException extends InjectorException
         return $message;
     }
 
+    /**
+     * @param object|string $class
+     *
+     * @return array<string>
+     */
     private static function getClassMethodsWithoutMagicMethods(object|string $class): array
     {
         $methods = get_class_methods($class);
