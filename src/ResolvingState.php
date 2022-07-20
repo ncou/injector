@@ -36,10 +36,38 @@ final class ResolvingState
      * @param ReflectionFunctionAbstract $reflection
      * @param array $arguments
      */
+    // TODO : virer le paramétre $reflection + la variable de classe qui porte cette information.
+    // TODO : remonter le code de la méthode sortArguments directement dans le constructeur !!!
     public function __construct(ReflectionFunctionAbstract $reflection, array $arguments)
     {
         $this->reflection = $reflection;
         $this->sortArguments($arguments);
+    }
+
+    /**
+     * @param array $arguments
+     *
+     * @throws InjectorException
+     */
+    // TODO : code à remonter dans le constructeur !!!
+    private function sortArguments(array $arguments): void
+    {
+        foreach ($arguments as $key => &$value) {
+            if (is_int($key)) {
+                if (! is_object($value)) {
+                    //'Injector expect an associative array except for object items.'
+                    //protected const EXCEPTION_MESSAGE = 'Invalid argument "%s" when calling "%s"%s. Non-object arguments should be named explicitly when passed.';
+                    //throw new InvalidArgumentException($this->reflection, (string) $key);
+                    //https://github.com/yiisoft/injector/blob/3df9b504ef721e192dac06d812b5c5b9f8df4b42/src/InvalidArgumentException.php#L7
+
+                    // We expect an associative array for the non-object values.
+                    throw new InjectorException('Invalid arguments array. Non-object argument should be named explicitly when passed.');
+                }
+                $this->numericArguments[] = &$value;
+            } else {
+                $this->namedArguments[$key] = &$value;
+            }
+        }
     }
 
     public function resolveParameterByName(string $name, bool $variadic): bool
@@ -109,37 +137,13 @@ final class ResolvingState
     /**
      * @throws InvalidParameterTypeException When a parameter is not compatible with the declared type.
      */
+    // TODO : ajouter en paramétre le $reflection ca évitera qu'on se la traine lors du contructeur !!!
     public function getResolvedValues(): array
     {
         // Raise an exception if the typehint is not respected.
         $this->checkParametersTypes($this->reflection, $this->resolvedValues);
 
         return $this->resolvedValues;
-    }
-
-    /**
-     * @param array $arguments
-     *
-     * @throws InjectorException
-     */
-    private function sortArguments(array $arguments): void
-    {
-        foreach ($arguments as $key => &$value) {
-            if (is_int($key)) {
-                if (! is_object($value)) {
-                    //'Injector expect an associative array except for object items.'
-                    //protected const EXCEPTION_MESSAGE = 'Invalid argument "%s" when calling "%s"%s. Non-object arguments should be named explicitly when passed.';
-                    //throw new InvalidArgumentException($this->reflection, (string) $key);
-                    //https://github.com/yiisoft/injector/blob/3df9b504ef721e192dac06d812b5c5b9f8df4b42/src/InvalidArgumentException.php#L7
-
-                    // We expect an associative array for the non-object values.
-                    throw new InjectorException('Invalid arguments array. Non-object argument should be named explicitly when passed.');
-                }
-                $this->numericArguments[] = &$value;
-            } else {
-                $this->namedArguments[$key] = &$value;
-            }
-        }
     }
 
     /**
@@ -171,6 +175,7 @@ final class ResolvingState
     /**
      * @throws InvalidParameterTypeException When a parameter is not compatible with the declared type.
      */
+    // https://github.com/aphiria/api/blob/1.x/src/Controllers/ControllerParameterResolver.php#L148
     // https://github.com/symfony/dependency-injection/blob/5.3/Compiler/CheckTypeDeclarationsPass.php#L161
     // TODO : à finir de coder !!!!
     // TODO : renommer en assertType()

@@ -6,7 +6,7 @@
         "verbosity": "normal"
     },
     "commit-msg": {
-        "enabled": true,
+        "enabled": false,
         "actions": [
             {
                 "action": "\\Ramsey\\CaptainHook\\ValidateConventionalCommit"

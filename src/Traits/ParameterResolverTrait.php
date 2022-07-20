@@ -11,6 +11,8 @@ use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use ReflectionParameter;
 
+//https://github.com/aphiria/api/blob/1.x/src/Controllers/ControllerParameterResolver.php#L148
+
 // INTERSECTION :
 //https://github.com/nette/di/blob/ad12717ec0493ff2a4f6bd7c06e98f4c1a05fb4c/src/DI/Resolver.php#L532
 // UNION : Remove the "xxx|null" part
@@ -154,8 +156,6 @@ trait ParameterResolverTrait
     /**
      * Get the class name of the given parameter's type, if possible.
      * Union/Intersection type hint that cannot be inferred unambiguously so we don't return a classname.
-     *
-     * From Reflector::getParameterClassName() in Illuminate\Support.
      *
      * @param  \ReflectionParameter  $parameter
      *
